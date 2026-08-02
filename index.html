@@ -5367,7 +5367,7 @@ if ($('mega-sort')) $('mega-sort').addEventListener('change', e => {
   renderTable();
 });
 if ($('mega-reset')) $('mega-reset').addEventListener('click', () => $('btn-reset').click());
-if ($('mega-report')) $('mega-report').addEventListener('click', () => { $('mode-dd').classList.remove('open'); $('cs-mode').classList.remove('active'); buildTerritoryReport(); });
+if ($('mega-report')) $('mega-report').addEventListener('click', () => { $('mode-dd').classList.remove('open'); $('cs-mode').classList.remove('active'); if (typeof window.SAWARO26_R81_TERRITORY_REPORT === 'function') window.SAWARO26_R81_TERRITORY_REPORT(); else buildTerritoryReport(); });
 
 // filter chips
 $$('[data-filter]').forEach(btn => {
@@ -6878,7 +6878,7 @@ const buildReportChart = a => {
     }
     return `<div class="report-bar-col" title="${p[0]} · ${fmt.full(p[1])}"><div class="report-bar ${p[2]==='ob'?'ob':''} ${p[1]?'':'zero'}" style="height:${px}px"></div><div class="report-bar-label">${p[0]}</div></div>`;
   }).join('');
-  return `<div class="report-chart-box"><div class="report-chart-head"><strong>Umsatztrend + FY26 Forecast Bridge</strong><span>Y-Achse max. ${reportScaleLabel(scaleMax)} · Balken exakt relativ</span></div><div class="report-chart-area">${reportAxisHtml(scaleMax)}<div class="report-chart-plot"><div class="report-bars scaled">${bars}</div></div></div><div class="report-legend"><span><i class="report-swatch hist"></i>Historie</span><span><i class="report-swatch ob"></i>Orderbook / sichtbar</span><span><i class="report-swatch gap"></i>offene Forecast-Lücke</span></div></div>`;
+  return `<div class="report-chart-box"><div class="report-chart-head"><strong>Umsatztrend + FY26 Forecast Bridge</strong><span>Y-Achse max. ${reportScaleLabel(scaleMax)} · Balken exakt relativ</span></div><div class="report-chart-area">${reportAxisHtml(scaleMax)}<div class="report-chart-plot"><div class="report-bars scaled">${bars}</div></div></div><div class="report-legend"><span><i class="report-swatch hist"></i>Historie</span><span><i class="report-swatch ob"></i>FY26 sichtbar</span><span><i class="report-swatch gap"></i>offene Forecast-Lücke</span></div></div>`;
 };
 const buildCustomerIntelligence = a => {
   const fc = accountForecastBreakdownFY26(a);
@@ -7071,18 +7071,18 @@ const reportScopeSummary = () => {
 const territoryAccounts = () => reportScopeAccounts();
 const buildAggregateReportChart = (data, title = 'Umsatztrend + Forecast') => {
   const p = aggregatePortfolio(data);
-  const pts = CONFIG.YEARS.slice(0,12).map((y,i)=>[y, p.totals[i] || 0, 'hist']).concat([['OB26', p.ob26, 'ob'], ['FY26', p.fy26, 'fy']]);
+  const pts = CONFIG.YEARS.slice(0,12).map((y,i)=>[y, p.totals[i] || 0, 'hist']).concat([['Visible', p.visible26, 'ob'], ['FY26', p.fy26, 'fy']]);
   const scaleMax = reportNiceScaleMax(Math.max(1, ...pts.map(x => x[1] || 0)));
   const bars = pts.map(x => {
     const px = reportBarPx(x[1], scaleMax, 3);
     if (x[2] === 'fy') {
-      const fill = x[1] > 0 ? clamp((p.ob26 / x[1]) * 100, p.ob26 > 0 ? 5 : 0, 100) : 0;
+      const fill = x[1] > 0 ? clamp((p.visible26 / x[1]) * 100, p.visible26 > 0 ? 5 : 0, 100) : 0;
       const gap = Math.max(0, 100 - fill);
-      return `<div class="report-bar-col" title="FY26 ${fmt.full(x[1])} · OB26 ${fmt.full(p.ob26)} · offen ${fmt.full(Math.max(0, p.fy26 - p.ob26))}"><div class="report-bar-stack" style="height:${px}px"><div class="report-bar-stack-fill" style="height:${fill}%"></div><div class="report-bar-stack-gap" style="height:${gap}%"></div></div><div class="report-bar-label">FY26</div></div>`;
+      return `<div class="report-bar-col" title="FY26 ${fmt.full(x[1])} · FY26 sichtbar ${fmt.full(p.visible26)} · offen ${fmt.full(Math.max(0, p.fy26 - p.visible26))}"><div class="report-bar-stack" style="height:${px}px"><div class="report-bar-stack-fill" style="height:${fill}%"></div><div class="report-bar-stack-gap" style="height:${gap}%"></div></div><div class="report-bar-label">FY26</div></div>`;
     }
     return `<div class="report-bar-col" title="${x[0]} · ${fmt.full(x[1])}"><div class="report-bar ${x[2]==='ob'?'ob':''} ${x[1]?'':'zero'}" style="height:${px}px"></div><div class="report-bar-label">${x[0]}</div></div>`;
   }).join('');
-  return `<div class="report-chart-box"><div class="report-chart-head"><strong>${reportSafe(title)}</strong><span>Aggregiert über ${data.length} Accounts · Y-Achse max. ${reportScaleLabel(scaleMax)}</span></div><div class="report-chart-area">${reportAxisHtml(scaleMax)}<div class="report-chart-plot"><div class="report-bars scaled">${bars}</div></div></div><div class="report-legend"><span><i class="report-swatch hist"></i>Historie</span><span><i class="report-swatch ob"></i>Orderbook / sichtbar</span><span><i class="report-swatch gap"></i>Forecast-Lücke</span></div></div>`;
+  return `<div class="report-chart-box"><div class="report-chart-head"><strong>${reportSafe(title)}</strong><span>Aggregiert über ${data.length} Accounts · Y-Achse max. ${reportScaleLabel(scaleMax)}</span></div><div class="report-chart-area">${reportAxisHtml(scaleMax)}<div class="report-chart-plot"><div class="report-bars scaled">${bars}</div></div></div><div class="report-legend"><span><i class="report-swatch hist"></i>Historie</span><span><i class="report-swatch ob"></i>FY26 sichtbar</span><span><i class="report-swatch gap"></i>Forecast-Lücke</span></div></div>`;
 };
 const accountImpactSignal = x => {
   if (x.y25 > 0 && x.fy26 < x.y25 * .72) return { label:'Drop / Defend', cls:'risk' };
@@ -7379,8 +7379,8 @@ $('article-mode').addEventListener('change', () => renderArticleNavigator());
 $('article-sort').addEventListener('change', () => renderArticleNavigator());
 if ($('article-print-customer')) $('article-print-customer').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); buildCustomerArticleReport(); });
 if ($('article-print-item')) $('article-print-item').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); buildSingleArticleReport(); });
-if ($('btn-territory-report')) $('btn-territory-report').addEventListener('click', buildTerritoryReport);
-if ($('btn-territory-report-main')) $('btn-territory-report-main').addEventListener('click', buildTerritoryReport);
+if ($('btn-territory-report')) $('btn-territory-report').addEventListener('click', () => (typeof window.SAWARO26_R81_TERRITORY_REPORT === 'function' ? window.SAWARO26_R81_TERRITORY_REPORT() : buildTerritoryReport()));
+if ($('btn-territory-report-main')) $('btn-territory-report-main').addEventListener('click', () => (typeof window.SAWARO26_R81_TERRITORY_REPORT === 'function' ? window.SAWARO26_R81_TERRITORY_REPORT() : buildTerritoryReport()));
 
 // "Zum Ergebnis" button
 $('btn-result').addEventListener('click', () => {
@@ -9742,7 +9742,7 @@ proxyClick('deck-logout','btn-logout');
 if ($('deck-excr')) $('deck-excr').addEventListener('click', () => openPrint('excr'));
 if ($('deck-cpr')) $('deck-cpr').addEventListener('click', () => openPrint('cpr'));
 proxyClick('deck-art','btn-art');
-if ($('deck-territory')) $('deck-territory').addEventListener('click', buildTerritoryReport);
+if ($('deck-territory')) $('deck-territory').addEventListener('click', () => (typeof window.SAWARO26_R81_TERRITORY_REPORT === 'function' ? window.SAWARO26_R81_TERRITORY_REPORT() : buildTerritoryReport()));
 (function(){
   var mb=document.getElementById('deck-more-btn'), mm=document.getElementById('deck-more-menu');
   if(mb&&mm){
@@ -9948,11 +9948,9 @@ try{window.accountRuntimeStatus=accountRuntimeStatus;}catch(e){}
     });
   }
   function boot(){
-    /*watchTopSOSButton disabled (merged SOSX)*/ interceptReportButtons();
-    setTimeout(function(){/*watchTopSOSButton disabled (merged SOSX)*/ interceptReportButtons();},300);
-    setTimeout(function(){/*watchTopSOSButton disabled (merged SOSX)*/ interceptReportButtons();},1200);
+    /* R8.1: v83 Territory button interception retired; native SOS bridge preserved. */
     window.SAWARO26_V83_OPEN_NATIVE_SOS=openNativeCalendar;
-    window.SAWARO26_V83_TERRITORY_REPORT=v83BuildTerritoryReport;
+    window.SAWARO26_V83_TERRITORY_REPORT=function(){console.warn('Deprecated Territory Report path v83; routed to R8.1 canonical builder');return window.SAWARO26_R81_TERRITORY_REPORT?window.SAWARO26_R81_TERRITORY_REPORT():v83BuildTerritoryReport();};
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
 })();
@@ -10152,11 +10150,8 @@ try{window.accountRuntimeStatus=accountRuntimeStatus;}catch(e){}
   }
   function interceptReportButtons(){['mega-report','btn-territory-report-main','btn-territory-report','deck-territory'].forEach(bindReportButton)}
   function boot(){
-    interceptReportButtons();
-    setTimeout(interceptReportButtons,120);
-    setTimeout(interceptReportButtons,550);
-    setTimeout(interceptReportButtons,1400);
-    window.SAWARO26_V84_TERRITORY_REPORT=buildReportV84;
+    /* R8.1: v84 clone-based Territory interception retired; helper API preserved. */
+    window.SAWARO26_V84_TERRITORY_REPORT=function(){console.warn('Deprecated Territory Report path v84; routed to R8.1 canonical builder');return window.SAWARO26_R81_TERRITORY_REPORT?window.SAWARO26_R81_TERRITORY_REPORT():buildReportV84();};
     window.SAWARO26_V84_RESOLVE_MAIN_SEGMENT=resolveMainSegment;
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
@@ -10169,6 +10164,69 @@ try{window.accountRuntimeStatus=accountRuntimeStatus;}catch(e){}
 .v85-snapshot-card{background:#f7faf5;border:1px solid #e0e8dc;border-radius:16px;padding:14px 16px;color:#172014}
 .v85-snapshot-card h4{margin:0 0 8px;font-size:13px;color:#2f8218;letter-spacing:.01em}.v85-snapshot-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.v85-snapshot-kpi{background:#fff;border:1px solid #e4ece0;border-radius:12px;padding:10px}.v85-snapshot-kpi span{display:block;font-size:8.5px;text-transform:uppercase;letter-spacing:.11em;color:#66715f;font-weight:800}.v85-snapshot-kpi b{display:block;margin-top:4px;font-size:14px;color:#111}.v85-season-row{display:flex;justify-content:space-between;border-bottom:1px solid #e6eee2;padding:6px 0;font-size:11.5px}.v85-season-row:last-child{border-bottom:none}.v85-season-row b{font-variant-numeric:tabular-nums}.v85-note{font-size:10.5px;color:#6a7566;line-height:1.45;margin-top:9px}.v85-seg-matrix{display:grid;gap:8px}.v85-seg-row{display:grid;grid-template-columns:142px 1fr 74px;gap:10px;align-items:center;background:#f7faf5;border:1px solid #e0e8dc;border-radius:12px;padding:8px 10px}.v85-seg-name{font-size:11px;font-weight:800;color:#1d2419}.v85-seg-bars{display:grid;gap:5px}.v85-bar-track{height:9px;background:#e8eee5;border-radius:999px;overflow:hidden}.v85-bar{height:100%;border-radius:999px;min-width:2px}.v85-bar.loss{background:#9b3030}.v85-bar.gain{background:#2f8218}.v85-seg-net{font-size:10.5px;text-align:right;font-weight:800}.v85-seg-net.pos{color:#2f8218}.v85-seg-net.neg{color:#9b3030}.v85-mini-label{display:flex;justify-content:space-between;font-size:8.5px;color:#677260;margin-bottom:2px}.v85-seg-legend{display:flex;gap:14px;align-items:center;font-size:10.5px;color:#66715f;margin-bottom:8px}.v85-seg-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}@media(max-width:760px){.v85-snapshot-grid{grid-template-columns:1fr}.v85-snapshot-kpis{grid-template-columns:1fr}.v85-seg-row{grid-template-columns:1fr}.v85-seg-net{text-align:left}}
 </style>
+
+<style id="sawaro-r8-1-acceptance-hotfix-css">
+/* SAWARO_RECOVERY_MARKER
+   ID: R8_1_ACCEPTANCE_LAYOUT
+   FUTURE_MODULE: reports/territory/renderer
+   RESPONSIBILITY: canonical Territory Report responsive/print layout; no domain calculations
+   BASELINE: v179 R8.1
+   MIGRATION_PRIORITY: HIGH
+*/
+.r811-territory .report-grid-kpi{grid-template-columns:repeat(4,minmax(0,1fr));}
+.r811-territory .report-kpi{min-width:0;}
+.r811-territory .report-kpi-v{overflow-wrap:anywhere;}
+.r811-territory .report-badge-stack{max-width:46%;}
+.r811-territory .report-badge{white-space:normal;text-align:center;line-height:1.25;}
+.r811-territory .v84-comp-card{min-width:0;}
+.r811-territory .v84-comp-card span,.r811-territory .v84-comp-card b{display:block;overflow-wrap:anywhere;}
+.r811-table-scroll{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;scrollbar-width:thin;}
+.r811-table-scroll>.report-table{min-width:920px;margin:0;}
+.r811-table-scroll>.report-target-table{min-width:980px;}
+.r811-target-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0;}
+.r811-target-card{border:1px solid #dce7d6;border-radius:13px;background:#fbfdf9;padding:12px 13px;min-width:0;}
+.r811-target-card>span{display:block;font-size:8.5px;font-weight:900;letter-spacing:.11em;text-transform:uppercase;color:#667060;}
+.r811-target-card>strong{display:block;margin:4px 0 7px;font-size:16px;line-height:1.15;color:#172014;overflow-wrap:anywhere;}
+.r811-target-card>strong.warn{color:#9a681d}.r811-target-card>strong.hi{color:#2f8218}
+.r811-target-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+.r811-target-facts div{border-top:1px solid #e3ebdf;padding-top:6px;min-width:0;}
+.r811-target-facts small{display:block;font-size:7.8px;line-height:1.25;color:#7a8175;text-transform:uppercase;letter-spacing:.06em;}
+.r811-target-facts b{display:block;margin-top:2px;font-size:10px;color:#263024;overflow-wrap:anywhere;}
+.r811-exposure-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:10px 0;}
+.r811-exposure-card{border:1px solid #dce4e8;border-radius:12px;background:#fbfcfa;padding:11px;min-width:0;color:#172014;}
+.r811-exposure-card span{display:block;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#667060;font-weight:900;}
+.r811-exposure-card b{display:block;margin-top:5px;font-size:15px;line-height:1.15;color:#111;overflow-wrap:anywhere;}
+.r811-exposure-card b.hi{color:#2f8218}.r811-exposure-card b.warn{color:#9a681d}.r811-exposure-card b.risk{color:#9b3030}
+.r811-exposure-card small{display:block;margin-top:4px;font-size:8.8px;line-height:1.35;color:#687063;}
+.r811-reconcile{margin:4px 0 14px;padding:9px 11px;border:1px solid #dce7d6;border-radius:10px;background:#f7faf5;color:#46513f;font-size:9.5px;line-height:1.4;}
+.r811-reconcile b{color:#1f6511;}
+@media(max-width:760px){
+  .r811-territory .report-hero{grid-template-columns:1fr;}
+  .r811-territory .report-badge-stack{max-width:none;align-items:flex-start;flex-direction:row;flex-wrap:wrap;}
+  .r811-territory .report-grid-kpi{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .r811-territory .report-forecast-grid{grid-template-columns:1fr;}
+  .r811-territory .v84-comp-grid{grid-template-columns:1fr!important;}
+  .r811-territory .v84-comp-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:start;}
+  .r811-territory .v84-comp-card i,.r811-territory .v84-comp-card small{grid-column:1/-1;}
+  .r811-territory .report-chart-head{display:block;}
+  .r811-territory .report-chart-head span{display:block;margin-top:3px;}
+  .r811-territory .report-legend{display:flex;flex-wrap:wrap;gap:7px 11px;}
+  .r811-target-grid,.r811-exposure-grid{grid-template-columns:1fr;}
+  .r811-target-facts{grid-template-columns:1fr 1fr 1fr;}
+  .r811-territory .report-section-title{line-height:1.35;}
+}
+@media(max-width:430px){
+  .r811-territory .report-grid-kpi{grid-template-columns:1fr 1fr;}
+  .r811-target-facts{grid-template-columns:1fr;}
+}
+@media print{
+  .r811-territory .report-grid-kpi{grid-template-columns:repeat(4,minmax(0,1fr))!important;}
+  .r811-target-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  .r811-exposure-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+  .r811-table-scroll{overflow:visible!important;}
+  .r811-table-scroll>.report-table{min-width:0!important;width:100%!important;}
+}
+</style>
 <script id="sawaro26-v85-seasonal-snapshot-patch">
 (function(){
   'use strict';
@@ -10179,6 +10237,51 @@ try{window.accountRuntimeStatus=accountRuntimeStatus;}catch(e){}
   const pct = v => v === null || v === undefined || !Number.isFinite(Number(v)) ? '–' : ((Number(v)>=0?'+':'') + Math.round(Number(v)*100) + '%');
   function rowsFor(data){return data.map(a=>{const fc=accountForecastBreakdownFY26(a);return {a,fc,delta:(fc.forecast||0)-(fc.y25||0)}})}
   function rowSummary(rows){let losses=0,gains=0,negCount=0,posCount=0;rows.forEach(r=>{if(r.delta<0){losses+=Math.abs(r.delta);negCount++}else if(r.delta>0){gains+=r.delta;posCount++}});return{losses,gains,net:gains-losses,negCount,posCount,total:rows.length}}
+
+  const pct1 = v => v === null || v === undefined || !Number.isFinite(Number(v)) ? '–' : ((Number(v)>=0?'+':'') + (Number(v)*100).toFixed(1).replace('.',',') + '%');
+  function sameCutoffSummary1791(data){
+    const rows=(data||[]).map(a=>{const fc=accountForecastBreakdownFY26(a);return snapshotBenchmarkFY26(a,fc)});
+    const current=rows.reduce((s,b)=>s+safeNum(b.currentVisible),0), prior=rows.reduce((s,b)=>s+safeNum(b.priorVisible),0);
+    const delta=current-prior, pctValue=prior>0?delta/prior:null;
+    return {current,prior,delta,pct:pctValue,month:rows[0]?.month||'–'};
+  }
+  function targetModel1791(data){
+    const agg=reportTargetAggSafe(data||[]);
+    if(!agg)return null;
+    const t=agg.totals||{};
+    const target=safeNum(t.target),stretch=safeNum(t.stretch),forecast=safeNum(t.forecast),visible=safeNum(t.visible),r25=safeNum(t.r25);
+    return {agg,target,stretch,forecast,visible,r25,lrpGap:Math.max(0,target-forecast),stretchGap:Math.max(0,stretch-forecast),lrpCoverage:target>0?forecast/target:null,stretchCoverage:stretch>0?forecast/stretch:null,lrpUplift:r25>0?target/r25-1:null,stretchUplift:r25>0?stretch/r25-1:null};
+  }
+  function targetCard1791(label,value,uplift,coverage,gap,sub,cls){
+    return '<div class="r811-target-card"><span>'+esc(label)+'</span><strong class="'+(cls||'')+'">'+money(value)+'</strong><div class="r811-target-facts"><div><small>vs. Umsatz 2025</small><b>'+pct1(uplift)+'</b></div><div><small>Forecast-Coverage</small><b>'+coveragePct1791(coverage)+'</b></div><div><small>offene Lücke</small><b>'+money(gap)+'</b></div></div><small style="display:block;margin-top:8px;color:#7a8175">'+esc(sub||'')+'</small></div>';
+  }
+  function coveragePct1791(v){return v===null||v===undefined||!Number.isFinite(Number(v))?'–':(Number(v)*100).toFixed(1).replace('.',',')+'%'}
+  function renderTerritoryTargetBlock1791(data){
+    const m=targetModel1791(data);
+    if(!m)return '<div class="report-section"><div class="report-section-title">Territory / Segment Target Gap</div><div class="report-clarity-note"><b>Target Layer:</b> Kein LRP-/Budgetpaket geladen.</div></div>';
+    const top=(m.agg.acctRows||[]).filter(r=>safeNum(r.activeTarget)>0||safeNum(r.target)>0||safeNum(r.stretch)>0).sort((a,b)=>Math.max(safeNum(b.target)-safeNum(b.forecast),safeNum(b.stretch)-safeNum(b.forecast))-Math.max(safeNum(a.target)-safeNum(a.forecast),safeNum(a.stretch)-safeNum(a.forecast))).slice(0,8);
+    const rows=top.length?'<div class="r811-table-scroll"><table class="report-table report-target-table"><thead><tr><th>Account</th><th class="num">LRP26</th><th class="num">Budget / Stretch</th><th class="num">FY26 Forecast</th><th class="num">Gap LRP</th><th class="num">Gap Budget</th><th>Match</th></tr></thead><tbody>'+top.map(r=>{const l=safeNum(r.target),s=safeNum(r.stretch),f=safeNum(r.forecast);return '<tr><td><b>'+esc(r.account?.name||'—')+'</b><div class="report-account-mini">'+esc(r.account?.id||'')+' · '+esc(r.account?.country||'')+' · '+esc(r.account?.segment||'')+'</div></td><td class="num">'+money(l)+'</td><td class="num">'+money(s)+'</td><td class="num">'+money(f)+'</td><td class="num '+(l>f?'neg':'pos')+'">'+money(Math.max(0,l-f))+'</td><td class="num '+(s>f?'neg':'pos')+'">'+money(Math.max(0,s-f))+'</td><td>'+esc(r.lrpMatchedBy||(r.matchCount?'MATCH':'—'))+'</td></tr>'}).join('')+'</tbody></table></div>':'<div class="report-mini-row"><span>Account Contribution</span><b>Keine Target-Matches in der Auswahl</b></div>';
+    return '<div class="report-section"><div class="report-section-title">Territory / Segment Target Gap</div><div class="r811-target-grid">'+
+      targetCard1791('LRP 2026',m.target,m.lrpUplift,m.lrpCoverage,m.lrpGap,'Original Target','')+
+      targetCard1791('Budget / Stretch 2026',m.stretch,m.stretchUplift,m.stretchCoverage,m.stretchGap,'TCS Jan / US Stretch','warn')+
+      '</div><div class="report-flow"><b>Decision Flow:</b><span class="arrow">→</span>Umsatz 2025 '+money(m.r25)+'<span class="arrow">→</span>LRP '+money(m.target)+' ('+pct1(m.lrpUplift)+')<span class="arrow">→</span>Budget/Stretch '+money(m.stretch)+' ('+pct1(m.stretchUplift)+')<span class="arrow">→</span>sichtbar '+money(m.visible)+'<span class="arrow">→</span>Forecast '+money(m.forecast)+'.</div>'+rows+'</div>';
+  }
+  function renderTerritoryR7B1791(data){
+    if(!window.SAWARO26_R7B)return '<div class="report-section"><div class="report-section-title">Risk & Exposure Contract · R7B</div><div class="report-clarity-note"><b>R7B:</b> Domainservice nicht verfügbar.</div></div>';
+    const actions=window.SAWARO26_R7B.currentActions?window.SAWARO26_R7B.currentActions():[];
+    const m=window.SAWARO26_R7B.portfolioMetrics(data||[],actions),t=targetModel1791(data)||{};
+    const card=(label,value,sub,cls)=>'<div class="r811-exposure-card"><span>'+esc(label)+'</span><b class="'+(cls||'')+'">'+value+'</b><small>'+esc(sub)+'</small></div>';
+    const confirmed=m.confirmedExposureCount?money(m.confirmedContestedRevenueEur):'—',weighted=m.confirmedExposureCount?money(m.riskWeightedExposureEur):'—';
+    return '<div class="report-section"><div class="report-section-title">Risk & Exposure Contract · R7B</div><div class="r811-exposure-grid">'+
+      card('Secured Revenue',money(m.securedRevenueEur),'YTD Turnover + offenes Orderbook · Fakt','hi')+
+      card('Unsecured Expected',money(m.unsecuredExpectedRevenueEur),'Most Likely minus Secured · Modellrest',m.unsecuredExpectedRevenueEur>=25000?'warn':'')+
+      card('Gap vs. LRP',t.target?money(t.lrpGap):'—',t.target?'LRP minus Most Likely':'Kein LRP zugeordnet',t.lrpGap>=25000?'warn':'')+
+      card('Gap vs. Budget / Stretch',t.stretch?money(t.stretchGap):'—',t.stretch?'Budget/Stretch minus Most Likely':'Kein Budget/Stretch zugeordnet',t.stretchGap>=25000?'warn':'')+
+      card('Downside Exposure',money(m.downsideExposureEur),'Most Likely minus Low Scenario · Modellunsicherheit',m.downsideExposureEur>=25000?'warn':'')+
+      card('Confirmed Contested',confirmed,m.confirmedExposureCount?m.confirmedExposureCount+' deduplizierte Exposure-ID(s)':'Keine bestätigte Position · kein Null-Risiko behauptet',m.confirmedContestedRevenueEur>=25000?'risk':'')+
+      card('Risk-weighted Exposure',weighted,'Σ bestätigter Betrag × explizite Wahrscheinlichkeit',m.riskWeightedExposureEur>=25000?'risk':'')+
+      '</div><div class="r7b-report-note"><b>Nicht addieren:</b> Secured Revenue, Unsecured Expected, Target-Gaps, Downside und Contested Exposure beantworten unterschiedliche Fragen. Der rohe Legacy-Action-Impact ('+money(m.legacyUnverifiedActionImpactEur)+' aus '+m.legacyUnverifiedActionCount+' Action(s)) ist kein Exposure-KPI.</div></div>';
+  }
   function compensationBlock(title,sub,summary){const max=Math.max(1,summary.losses,summary.gains);return '<div class="report-section"><div class="report-section-title">'+esc(title)+'</div><div class="v84-comp-grid"><div class="v84-comp-card loss"><span>Loss / rückläufiges Volumen</span><b>'+money(summary.losses)+'</b><i style="width:'+Math.min(100,summary.losses/max*100).toFixed(1)+'%"></i></div><div class="v84-comp-card gain"><span>Contribution / Zugewinn</span><b>'+money(summary.gains)+'</b><i style="width:'+Math.min(100,summary.gains/max*100).toFixed(1)+'%"></i></div><div class="v84-comp-card net"><span>Nettoeffekt</span><b class="'+(summary.net>=0?'netpos':'netneg')+'">'+(summary.net>=0?'+':'')+money(summary.net)+'</b><small>'+esc(sub||'')+'</small></div></div>'+compensationBars(summary)+'<div class="v84-section-note">Der Nettoeffekt darf nicht als reine Wachstumsleistung gelesen werden: Die Darstellung trennt verlorenes bzw. rückläufiges Volumen von kompensierendem Zugewinn.</div></div>'}
   function snapshotSummary(data){
     const rows=data.map(a=>{const fc=accountForecastBreakdownFY26(a);const b=snapshotBenchmarkFY26(a,fc);const rt=accountRuntimeStatus(a);return{a,fc,b,rt}});
@@ -10277,35 +10380,43 @@ try{window.accountRuntimeStatus=accountRuntimeStatus;}catch(e){}
       '</div>';
   }
   function segmentMatrix(data){const segs=segmentSummaries(data).filter(s=>s.losses>0||s.gains>0); if(!segs.length)return ''; const max=Math.max(1,...segs.map(s=>Math.max(s.losses,s.gains))); const rows=segs.map(s=>'<div class="v85-seg-row"><div class="v85-seg-name">'+esc(s.segment)+'<br><span style="font-weight:600;color:#7a8375">'+s.total+' Accounts</span></div><div class="v85-seg-bars"><div><div class="v85-mini-label"><span>Loss</span><b>'+money(s.losses)+'</b></div><div class="v85-bar-track"><div class="v85-bar loss" style="width:'+Math.min(100,s.losses/max*100).toFixed(1)+'%"></div></div></div><div><div class="v85-mini-label"><span>Contribution</span><b>'+money(s.gains)+'</b></div><div class="v85-bar-track"><div class="v85-bar gain" style="width:'+Math.min(100,s.gains/max*100).toFixed(1)+'%"></div></div></div></div><div class="v85-seg-net '+(s.net>=0?'pos':'neg')+'">'+(s.net>=0?'+':'')+money(s.net)+'</div></div>').join(''); return '<div class="report-section"><div class="report-section-title">Hauptsegment-Matrix · Loss vs. Contribution</div><div class="v85-seg-legend"><span><i style="background:#9b3030"></i>Loss</span><span><i style="background:#2f8218"></i>Contribution</span><span>Skala: '+money(max)+'</span></div><div class="v85-seg-matrix">'+rows+'</div><div class="v84-section-note">Diese Darstellung ersetzt das Spider Chart, weil Balken je Hauptsegment robuster und im PDF/Print besser lesbar sind. Subsegments bleiben Drilldown, nicht Hauptachse.</div></div>'}
-  function countryBreakdown(data){const countries=['AT','SI','HR'];const chunks=countries.map(c=>{const d=data.filter(a=>String(a.country||'').toUpperCase()===c);if(!d.length)return'';return compensationBlock('Länder-Kompensation · '+c,'Scope '+c,rowSummary(rowsFor(d)))}).join('');return chunks?'<div>'+chunks+'</div>':''}
+  function countryBreakdown(data){
+    const countries=['AT','SI','HR'],known=new Set(countries),groups=[];
+    countries.forEach(c=>{const d=(data||[]).filter(a=>String(a.country||'').toUpperCase()===c);if(d.length)groups.push({label:c,data:d,summary:rowSummary(rowsFor(d))});});
+    const other=(data||[]).filter(a=>!known.has(String(a.country||'').toUpperCase()));
+    if(other.length)groups.push({label:'OTHER / UNASSIGNED',data:other,summary:rowSummary(rowsFor(other))});
+    if(!groups.length)return'';
+    const total=rowSummary(rowsFor(data||[])),groupNet=groups.reduce((s,g)=>s+g.summary.net,0),diff=total.net-groupNet;
+    const chunks=groups.map(g=>compensationBlock('Länder-Kompensation · '+g.label,'Scope '+g.label,g.summary)).join('');
+    return '<div>'+chunks+'<div class="r811-reconcile"><b>Länder-Reconciliation:</b> '+groups.map(g=>g.label+' '+(g.summary.net>=0?'+':'')+money(g.summary.net)).join(' · ')+' = '+(groupNet>=0?'+':'')+money(groupNet)+'; Portfolio '+(total.net>=0?'+':'')+money(total.net)+'; Differenz '+money(diff)+'.</div></div>';
+  }
   function buildReportV85(){
     try{
       const data=territoryAccounts(); if(!data.length){ if(typeof toast==='function') toast('Keine Accounts für den Territory Report gefunden','err'); return; }
       const p=aggregatePortfolio(data), rows=accountImpactRows(data), scope=reportScopeSummary(), country=(STATE.adv&&STATE.adv.country)||'Alle Länder', stamp=reportDateStamp(), title='Territory Report Out · '+scope;
-      const summary=rowSummary(rowsFor(data));
-      const v85Concl=(function(){try{
-        var n=data.length, dPct=p.r25>0?(p.delta/p.r25*100):0;
-        var neg=rows.slice().filter(function(r){return r.delta<0;}).sort(function(x,y){return x.delta-y.delta;}).slice(0,3).map(function(r){return (r.a&&r.a.name)||'?';});
-        var pos=rows.slice().filter(function(r){return r.delta>0;}).sort(function(x,y){return y.delta-x.delta;}).slice(0,3).map(function(r){return (r.a&&r.a.name)||'?';});
-        var gap=Math.max(0,p.fy26-p.ob26), dir=p.delta>=0?'über':'unter';
-        var t=n+' Accounts im Scope · Umsatz 2025 '+fmt.full(p.r25)+'. FY26-Forecast '+fmt.full(p.fy26)+' liegt '+dir+' Vorjahr ('+(p.delta>=0?'+':'')+fmt.full(p.delta)+' / '+(dPct>=0?'+':'')+dPct.toFixed(1)+'%). ';
-        t+='Netto-Bild '+(p.delta>=0?'positiv':'negativ')+'. Eine monetäre Risk Exposure wird bis zur einheitlichen R7-Definition nicht ausgewiesen. ';
-        if(neg.length)t+='Größte Rückgänge: '+neg.join(', ')+'. ';
-        if(pos.length)t+='Stärkste Zugewinne: '+pos.join(', ')+'. ';
-        t+='Nächste Schritte: bei den Top-Rückgangs-Accounts Same-Cutoff-Benchmark und offene FY26-Abrufe konkret klären; OB-Coverage-Lücke '+fmt.full(gap)+' gegen geplante Bestellungen abgleichen; Stretch-Potenzial der Zugewinn-Accounts im LRP-Target verankern.';
-        return t;
-      }catch(e){return data.length+' Accounts · Umsatz 2025 '+fmt.full(p.r25)+' · FY26-Forecast '+fmt.full(p.fy26)+'.';}})();
-      const v85ConclSection='<div class="report-section"><div class="report-section-title">Regional Management Conclusion</div><div class="report-summary"><b>TRR · Territory:</b> '+reportSafe(v85Concl)+'</div></div>';
-      const body='<div class="report-sheet"><div class="report-hero"><div><div class="report-eyebrow">TRR · Territory Report</div><div class="report-title-main">'+reportSafe(title)+'</div><div class="report-meta-line">Territory: '+reportSafe(scope)+' · '+reportGeneratedLine(stamp)+'</div><div class="report-meta-line">Scope: Gesamtgebiet / Länder / Hauptsegmente mit Same-Cutoff-Benchmark, Forecast und Kompensationseffekt</div></div><div class="report-badge-stack"><div class="report-badge">Territory</div><div class="report-badge '+(p.delta<0?'warn':'')+'">'+(p.delta>=0?'Momentum positiv':'Momentum negativ')+'</div></div></div>'+
-      '<div class="report-grid-kpi"><div class="report-kpi"><div class="report-kpi-l">Accounts</div><div class="report-kpi-v">'+fmt.num(data.length)+'</div><div class="report-kpi-sub">Gebiet / Auswahl</div></div><div class="report-kpi"><div class="report-kpi-l">Umsatz 2025</div><div class="report-kpi-v hi">'+fmt.full(p.r25)+'</div><div class="report-kpi-sub">Ist / Historie</div></div><div class="report-kpi"><div class="report-kpi-l">OB26</div><div class="report-kpi-v hi">'+fmt.full(p.ob26)+'</div><div class="report-kpi-sub">Pipeline-Floor</div></div><div class="report-kpi"><div class="report-kpi-l">FY26 Forecast</div><div class="report-kpi-v hi">'+fmt.full(p.fy26)+'</div><div class="report-kpi-sub">Trend + Orderbook</div></div><div class="report-kpi"><div class="report-kpi-l">Forecast Δ</div><div class="report-kpi-v '+(p.delta<0?'warn':'hi')+'">'+fmt.full(p.delta)+'</div><div class="report-kpi-sub">FY26 vs. 2025</div></div><div class="report-kpi"><div class="report-kpi-l">Revenue at Risk</div><div class="report-kpi-v risk">'+fmt.full(p.riskExposure)+'</div><div class="report-kpi-sub">High Risk / Drop</div></div></div>'+
-      '<div class="report-clarity-note"><b>Forecast-Transparenz v85:</b> FY26 Forecast ist keine fixe Bestellung. 2026 sichtbar = TO_ORDB Turnover YTD + Open OB26. Die Risk-/Drop-Bewertung berücksichtigt zusätzlich den Same-Cutoff-Benchmark: aktueller FY26-Sichtbarkeitsstand gegen historischen 2025-YTD-Wert zum gleichen Monat. Damit werden frühe Jahreslücken und monatliche Orderbook-Verzögerungen nicht mehr automatisch als harter Drop interpretiert.</div>'+v85ConclSection+'<div class="report-section"><div class="report-section-title">Gesamtumsatz · Risikoentwicklung · Forecast</div><div class="report-forecast-grid">'+buildAggregateReportChart(data,'Territory Umsatzentwicklung 2014–FY26')+'<div class="report-forecast-table"><div class="report-mini-row"><span>Visible/FY Coverage</span><b class="'+(p.fy26&&p.ob26/p.fy26<.65?'warn':'hi')+'">'+(p.fy26?reportPct(p.ob26/p.fy26):'–')+'</b></div><div class="report-mini-row"><span>Offene FY26-Lücke</span><b class="'+(Math.max(0,p.fy26-p.ob26)>0?'warn':'hi')+'">'+fmt.full(Math.max(0,p.fy26-p.ob26))+'</b></div><div class="report-mini-row"><span>Top Negativ / Positiv</span><b>'+summary.negCount+' / '+summary.posCount+'</b></div><div class="report-mini-row"><span>Methodik</span><b>2014–2025 Historie · Same-Cutoff YTD · TO_ORDB YTD + Open OB Floor</b></div></div></div></div>'+
-      snapshotSummary(data)+compensationBlock('Kompensationseffekt · Gesamt / aktueller Scope','Brutto-Bewegung hinter dem Netto-Forecast',summary)+countryBreakdown(data)+segmentMatrix(data)+renderTargetReportBlock(data,'Territory / Segment LRP Target Gap')+renderRadarReportBlock(data,'RADAR Findings · Current Report Scope')+renderSOSReportBlock(data,'SOS Follow-up · Current Report Scope')+'<div class="report-section"><div class="report-section-title">Risk Exposure</div>'+renderTerritoryRisk(data)+'</div><div class="report-section"><div class="report-section-title">Top 10 negative FY26 Δ vs. 2025</div>'+renderAccountImpactTable(rows,'neg')+'</div><div class="report-section"><div class="report-section-title">Top 10 positive FY26 Δ vs. 2025</div>'+renderAccountImpactTable(rows,'pos')+'</div>'+reportFooter('TRR',scope,stamp)+'</div>';
-      openReportHtml('TRR · Territory Report v85',country,body);
-    }catch(err){console.error('v85 territory report failed',err); if(typeof toast==='function') toast('Territory Report v85 konnte nicht erstellt werden','err');}
+      const summary=rowSummary(rowsFor(data)),cut=sameCutoffSummary1791(data),annualPct=p.r25>0?p.delta/p.r25:null;
+      const r7b=window.SAWARO26_R7B?window.SAWARO26_R7B.portfolioMetrics(data,window.SAWARO26_R7B.currentActions?window.SAWARO26_R7B.currentActions():[]):null;
+      const neg=rows.slice().filter(r=>r.delta<0).sort((x,y)=>x.delta-y.delta).slice(0,3).map(r=>(r.a&&r.a.name)||'?');
+      const pos=rows.slice().filter(r=>r.delta>0).sort((x,y)=>y.delta-x.delta).slice(0,3).map(r=>(r.a&&r.a.name)||'?');
+      const visibleGap=Math.max(0,p.fy26-p.visible26);
+      let v85Concl=data.length+' Accounts im Scope · Umsatz 2025 '+money(p.r25)+'. FY26-Forecast '+money(p.fy26)+' liegt '+(p.delta>=0?'über':'unter')+' Vorjahr ('+(p.delta>=0?'+':'')+money(p.delta)+' / '+pct1(annualPct)+'). Same-Cutoff liegt der aktuelle Sichtbarkeitsstand '+(cut.delta>=0?'über':'unter')+' dem Vorjahr ('+(cut.delta>=0?'+':'')+money(cut.delta)+' / '+pct1(cut.pct)+'). ';
+      v85Concl+=(r7b&&r7b.confirmedExposureCount)?('Bestätigte contested Positionen: '+r7b.confirmedExposureCount+'; risk-weighted '+money(r7b.riskWeightedExposureEur)+'. '):'Keine bestätigte Exposure-Position; es wird kein Null-Risiko behauptet. ';
+      if(neg.length)v85Concl+='Größte negative Forecastbewegungen: '+neg.join(', ')+'. ';
+      if(pos.length)v85Concl+='Stärkste positive Forecastbewegungen: '+pos.join(', ')+'. ';
+      v85Concl+='Nächste Schritte: Same-Cutoff und offene Abrufe bei den Top-Rückgangs-Accounts konkret klären; ungesicherten Forecastrest '+money(visibleGap)+' gegen realistische Bestellungen und qualifizierte Projekte abgleichen.';
+      const v85ConclSection='<div class="report-section"><div class="report-section-title">Regional Management Conclusion</div><div class="report-summary"><b>TRR · Territory:</b> '+esc(v85Concl)+'</div></div>';
+      const riskTop=r7b&&r7b.confirmedExposureCount?money(r7b.riskWeightedExposureEur):'—';
+      const riskSub=r7b&&r7b.confirmedExposureCount?r7b.confirmedExposureCount+' bestätigte Exposure-ID(s)':'Keine bestätigte Position';
+      const body='<div class="report-sheet r811-territory"><div class="report-hero"><div><div class="report-eyebrow">TRR · Territory Report</div><div class="report-title-main">'+esc(title)+'</div><div class="report-meta-line">Territory: '+esc(scope)+' · '+reportGeneratedLine(stamp)+'</div><div class="report-meta-line">Scope: Gesamtgebiet / Länder / Hauptsegmente mit Same-Cutoff, Forecast, Target-Uplift und R7B Exposure Contract</div></div><div class="report-badge-stack"><div class="report-badge">Territory</div><div class="report-badge '+(annualPct<0?'warn':'')+'">FY26 '+pct1(annualPct)+' vs. 2025</div><div class="report-badge '+(cut.pct<0?'warn':'')+'">Same-Cutoff '+pct1(cut.pct)+'</div></div></div>'+
+      '<div class="report-grid-kpi"><div class="report-kpi"><div class="report-kpi-l">Accounts</div><div class="report-kpi-v">'+fmt.num(data.length)+'</div><div class="report-kpi-sub">Gebiet / Auswahl</div></div><div class="report-kpi"><div class="report-kpi-l">Umsatz 2025</div><div class="report-kpi-v hi">'+money(p.r25)+'</div><div class="report-kpi-sub">Ist / Historie</div></div><div class="report-kpi"><div class="report-kpi-l">YTD Turnover 2026</div><div class="report-kpi-v hi">'+money(p.to26)+'</div><div class="report-kpi-sub">gebuchter Umsatz</div></div><div class="report-kpi"><div class="report-kpi-l">Open Orderbook</div><div class="report-kpi-v hi">'+money(p.obOpen26)+'</div><div class="report-kpi-sub">offene Aufträge</div></div><div class="report-kpi"><div class="report-kpi-l">FY26 sichtbar</div><div class="report-kpi-v hi">'+money(p.visible26)+'</div><div class="report-kpi-sub">YTD + Open Orderbook</div></div><div class="report-kpi"><div class="report-kpi-l">FY26 Forecast</div><div class="report-kpi-v hi">'+money(p.fy26)+'</div><div class="report-kpi-sub">Most Likely</div></div><div class="report-kpi"><div class="report-kpi-l">Forecast Δ</div><div class="report-kpi-v '+(p.delta<0?'warn':'hi')+'">'+(p.delta>=0?'+':'')+money(p.delta)+'</div><div class="report-kpi-sub">'+pct1(annualPct)+' vs. 2025</div></div><div class="report-kpi"><div class="report-kpi-l">Risk-weighted Exposure</div><div class="report-kpi-v '+(r7b&&r7b.riskWeightedExposureEur>=25000?'risk':'hi')+'">'+riskTop+'</div><div class="report-kpi-sub">'+esc(riskSub)+'</div></div></div>'+
+      '<div class="report-clarity-note"><b>Forecast- und Exposure-Transparenz:</b> FY26 sichtbar = gebuchter YTD-Turnover + offenes Orderbook. Der Most-Likely-Forecast bleibt eine modellierte Erwartung, nicht eine Bestellung. Same-Cutoff vergleicht den aktuellen Sichtbarkeitsstand mit dem historischen 2025-YTD-Wert zum gleichen Monat. R7B monetarisiert ausschließlich explizit bestätigte, dokumentierte und deduplizierte Exposure-Positionen.</div>'+v85ConclSection+'<div class="report-section"><div class="report-section-title">Gesamtumsatz · Sichtbarkeit · Forecast</div><div class="report-forecast-grid">'+buildAggregateReportChart(data,'Territory Umsatzentwicklung 2014–FY26')+'<div class="report-forecast-table"><div class="report-mini-row"><span>Visible/FY Coverage</span><b class="'+(p.fy26&&p.visible26/p.fy26<.65?'warn':'hi')+'">'+(p.fy26?reportPct(p.visible26/p.fy26):'–')+'</b></div><div class="report-mini-row"><span>Offener Forecastrest</span><b class="'+(visibleGap>0?'warn':'hi')+'">'+money(visibleGap)+'</b></div><div class="report-mini-row"><span>Top Negativ / Positiv</span><b>'+summary.negCount+' / '+summary.posCount+'</b></div><div class="report-mini-row"><span>Methodik</span><b>2014–2025 Historie · Same-Cutoff YTD · aktueller YTD + Open OB</b></div></div></div></div>'+
+      snapshotSummary(data)+compensationBlock('Kompensationseffekt · Gesamt / aktueller Scope','Brutto-Bewegung hinter dem Netto-Forecast',summary)+(window.SAWARO26_R86_PARETO_SECTION?window.SAWARO26_R86_PARETO_SECTION(data):'')+countryBreakdown(data)+segmentMatrix(data)+renderTerritoryTargetBlock1791(data)+renderRadarReportBlock(data,'RADAR Findings · Current Report Scope')+renderSOSReportBlock(data,'SOS Follow-up · Current Report Scope')+renderTerritoryR7B1791(data)+'<div class="report-section"><div class="report-section-title">Top 10 negative FY26 Δ vs. 2025 · Anteil an gesamter negativer Forecastbewegung</div>'+(window.SAWARO26_R86_IMPACT_TABLE?window.SAWARO26_R86_IMPACT_TABLE(rows,'neg'):renderAccountImpactTable(rows,'neg'))+'</div><div class="report-section"><div class="report-section-title">Top 10 positive FY26 Δ vs. 2025 · Anteil an positiver Forecastbewegung</div>'+(window.SAWARO26_R86_IMPACT_TABLE?window.SAWARO26_R86_IMPACT_TABLE(rows,'pos'):renderAccountImpactTable(rows,'pos'))+'</div>'+reportFooter('TRR',scope,stamp)+'</div>';
+      openReportHtml('TRR · Territory Report · R8.1.1',country,body);
+    }catch(err){console.error('R8.1.1 territory report failed',err); if(typeof toast==='function') toast('Territory Report R8.1.1 konnte nicht erstellt werden','err');}
   }
   function bindReportButton(id){const el=byId(id); if(!el || el.getAttribute('data-v85-report-bound')==='1') return; const clone=el.cloneNode(true); clone.id=id; clone.setAttribute('data-v85-report-bound','1'); clone.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();buildReportV85();},true); el.parentNode.replaceChild(clone,el)}
   function intercept(){['mega-report','btn-territory-report-main','btn-territory-report','deck-territory'].forEach(bindReportButton)}
-  function boot(){intercept(); setTimeout(intercept,120); setTimeout(intercept,600); setTimeout(intercept,1500); window.SAWARO26_V85_TERRITORY_REPORT=buildReportV85; window.SAWARO26_V85_SNAPSHOT_BENCHMARK=snapshotBenchmarkFY26; window.SAWARO26_COMP_BARS=compensationBars; window.SAWARO26_SEG_SPIDER=segmentSpider; window.SAWARO26_ROWS_FOR=rowsFor; window.SAWARO26_ROW_SUMMARY=rowSummary;}
+  function boot(){window.SAWARO26_V85_TERRITORY_REPORT=function(){console.warn('Deprecated Territory Report alias v85; routed to R8.1 canonical builder');return buildReportV85();}; window.SAWARO26_R811_TERRITORY_REPORT=buildReportV85; window.SAWARO26_R81_TERRITORY_REPORT=buildReportV85; window.SAWARO26_V85_SNAPSHOT_BENCHMARK=snapshotBenchmarkFY26; window.SAWARO26_COMP_BARS=compensationBars; window.SAWARO26_SEG_SPIDER=segmentSpider; window.SAWARO26_ROWS_FOR=rowsFor; window.SAWARO26_ROW_SUMMARY=rowSummary; window.SAWARO26_R81_TERRITORY_MODEL=Object.freeze({rowsFor:rowsFor,rowSummary:rowSummary,snapshotSummary:snapshotSummary,segmentSummaries:segmentSummaries}); window.SAWARO26_R811_TERRITORY_MODEL=Object.freeze({rowsFor:rowsFor,rowSummary:rowSummary,sameCutoffSummary:sameCutoffSummary1791,targetModel:targetModel1791,renderTargetBlock:renderTerritoryTargetBlock1791,renderR7BBlock:renderTerritoryR7B1791,segmentSummaries:segmentSummaries}); console.info('R8.1.1 canonical Territory Report acceptance hotfix active');}
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
 try{ if(typeof snapshotSummary==='function') window.__SR_snapshotSummary=snapshotSummary; if(typeof resolveMainSegment==='function' && !window.__SR_seg) window.__SR_seg=resolveMainSegment; }catch(e){console.warn('SR bridge b6',e);}
 })();
@@ -10369,19 +10480,26 @@ try{ if(typeof snapshotSummary==='function') window.__SR_snapshotSummary=snapsho
   function pareto(data,basis,label){var vals=(data||[]).map(function(a){return {a:a,value:basisValue(a,basis)}}).filter(function(x){return x.value>0}).sort(function(a,b){return b.value-a.value}); var total=vals.reduce(function(s,x){return s+x.value},0); var n=vals.length, cum=0, count80=0; for(var i=0;i<vals.length;i++){cum+=vals[i].value; if(!count80 && total>0 && cum>=total*.8)count80=i+1} if(!count80&&n)count80=n; var top10=vals.slice(0,10).reduce(function(s,x){return s+x.value},0); var top5=vals.slice(0,5).reduce(function(s,x){return s+x.value},0); var top1=vals[0]?.value||0; var shareCustomers=n?count80/n:0, share80=total?cum/total:0; return {label:label,total:total,n:n,count80:count80,shareCustomers:shareCustomers,share80:share80,top1:total?top1/total:0,top5:total?top5/total:0,top10:total?top10/total:0,topAccount:vals[0]?.a};}
   function paretoCard(m){var p=clamp(m.shareCustomers*100,0,100).toFixed(1)+'%'; return '<div class="v86-pareto-card"><h4>'+esc(m.label)+'</h4><div class="v86-pareto-main"><div class="v86-pareto-donut" style="--p:'+clamp(m.shareCustomers*100,0,100)+'%"><span>'+p+'<br>Kunden</span></div><div class="v86-pareto-copy"><b>'+num(m.count80)+' von '+num(m.n)+'</b> aktiven Kunden erzeugen rund 80% des Umsatzvolumens im aktuellen Report-Scope.<br><span>Gesamtbasis: '+money(m.total)+'</span></div></div><div class="v86-pareto-bars"><div class="v86-pareto-row"><span>Top 1</span><div class="v86-pareto-track"><div class="v86-pareto-fill" style="width:'+clamp(m.top1*100,0,100)+'%"></div></div><b>'+pct(m.top1,1)+'</b></div><div class="v86-pareto-row"><span>Top 5</span><div class="v86-pareto-track"><div class="v86-pareto-fill" style="width:'+clamp(m.top5*100,0,100)+'%"></div></div><b>'+pct(m.top5,1)+'</b></div><div class="v86-pareto-row"><span>Top 10</span><div class="v86-pareto-track"><div class="v86-pareto-fill" style="width:'+clamp(m.top10*100,0,100)+'%"></div></div><b>'+pct(m.top10,1)+'</b></div></div></div>'}
   function paretoSection(data){if(!data||!data.length)return ''; var y25=pareto(data,'y25','Pareto · Umsatz 2025'); var fy=pareto(data,'fy26','Pareto · FY26 Forecast'); return '<div class="report-section v86-pareto-section"><div class="report-section-title">Pareto-Konzentration · Kundenanteil vs. Umsatzanteil</div><div class="v86-pareto-grid">'+paretoCard(y25)+paretoCard(fy)+'</div><div class="v86-note">Interpretation: Der Wert zeigt, wie stark der aktuelle Report-Scope von wenigen Kunden getragen wird. Je kleiner der Kundenanteil für 80% Umsatz, desto höher ist die Abhängigkeit und desto relevanter sind Top-Loss-Accounts für die Managementbewertung.</div></div>'}
-  function impactTable(rows,type){var neg=rows.filter(function(r){return Number(r.delta)<0}), pos=rows.filter(function(r){return Number(r.delta)>0}); var denom=type==='neg'?neg.reduce(function(s,r){return s+Math.abs(Number(r.delta)||0)},0):pos.reduce(function(s,r){return s+(Number(r.delta)||0)},0); var sorted=(type==='neg'?neg.sort(function(a,b){return a.delta-b.delta}):pos.sort(function(a,b){return b.delta-a.delta})).slice(0,10); if(!sorted.length)return '<div class="report-mini-row"><span>Keine relevanten Accounts</span><b>—</b></div>'; var fillClass=type==='neg'?'loss':'gain'; return '<table class="report-table territory v86-impact-share-table"><thead><tr><th>Account</th><th>Hauptsegment</th><th class="num">2025</th><th class="num">OB26 sichtbar</th><th class="num">FY26 Forecast</th><th class="num">Δ vs. 2025</th><th class="share">Anteil '+(type==='neg'?'am Loss':'an Contribution')+'</th><th>Signal</th></tr></thead><tbody>'+sorted.map(function(x){var sh=denom?Math.abs(Number(x.delta)||0)/denom:0; return '<tr><td><b>'+accountName(x.a)+'</b><div class="report-account-mini">'+accountMeta(x.a)+'</div></td><td>'+safeSegment(x.a)+'</td><td class="num">'+money(x.y25)+'</td><td class="num">'+money(x.ob26)+'</td><td class="num">'+money(x.fy26)+'</td><td class="num '+(x.delta<0?'neg':'pos')+'">'+(x.delta>0?'+':'')+money(x.delta)+'</td><td class="share"><span class="share-badge"><span class="share-mini"><span class="share-fill '+fillClass+'" style="width:'+clamp(sh*100,2,100)+'%"></span></span>'+pct(sh,1)+'</span></td><td><span class="report-signal '+esc(x.signal?.cls||'')+'">'+esc(x.signal?.label||'—')+'</span></td></tr>'}).join('')+'</tbody></table><div class="v86-note">Die Prozentzahl bezieht sich immer auf den aktuell betrachteten Report-Scope. Ein österreichischer Kunde kann im AT-Report daher einen deutlich höheren Loss-Anteil haben als im Gesamtterritory AT/SI/HR.</div>'}
+  function impactTable(rows,type){var neg=rows.filter(function(r){return Number(r.delta)<0}), pos=rows.filter(function(r){return Number(r.delta)>0}); var denom=type==='neg'?neg.reduce(function(s,r){return s+Math.abs(Number(r.delta)||0)},0):pos.reduce(function(s,r){return s+(Number(r.delta)||0)},0); var sorted=(type==='neg'?neg.sort(function(a,b){return a.delta-b.delta}):pos.sort(function(a,b){return b.delta-a.delta})).slice(0,10); if(!sorted.length)return '<div class="report-mini-row"><span>Keine relevanten Accounts</span><b>—</b></div>'; var fillClass=type==='neg'?'loss':'gain'; return '<div class="r811-table-scroll"><table class="report-table territory v86-impact-share-table"><thead><tr><th>Account</th><th>Hauptsegment</th><th class="num">2025</th><th class="num">FY26 sichtbar</th><th class="num">FY26 Forecast</th><th class="num">Δ vs. 2025</th><th class="share">Anteil '+(type==='neg'?'an negativer Bewegung':'an positiver Bewegung')+'</th><th>Signal</th></tr></thead><tbody>'+sorted.map(function(x){var sh=denom?Math.abs(Number(x.delta)||0)/denom:0; return '<tr><td><b>'+accountName(x.a)+'</b><div class="report-account-mini">'+accountMeta(x.a)+'</div></td><td>'+safeSegment(x.a)+'</td><td class="num">'+money(x.y25)+'</td><td class="num">'+money(x.ob26)+'</td><td class="num">'+money(x.fy26)+'</td><td class="num '+(x.delta<0?'neg':'pos')+'">'+(x.delta>0?'+':'')+money(x.delta)+'</td><td class="share"><span class="share-badge"><span class="share-mini"><span class="share-fill '+fillClass+'" style="width:'+clamp(sh*100,2,100)+'%"></span></span>'+pct(sh,1)+'</span></td><td><span class="report-signal '+esc(x.signal?.cls||'')+'">'+esc(x.signal?.label||'—')+'</span></td></tr>'}).join('')+'</tbody></table></div><div class="v86-note">Die Prozentzahl bezieht sich auf den aktuellen Report-Scope. FY26 sichtbar bezeichnet YTD Turnover plus offenes Orderbook.</div>'}
   function sectionByTitle(prefix){var body=byId('doc-body'); if(!body)return null; var titles=Array.prototype.slice.call(body.querySelectorAll('.report-section-title')); for(var i=0;i<titles.length;i++){var t=(titles[i].textContent||'').trim(); if(t.indexOf(prefix)===0)return titles[i].closest('.report-section')} return null}
   function insertAfter(anchor, html){if(!anchor||!html)return; var tmp=document.createElement('div'); tmp.innerHTML=html; var node=tmp.firstElementChild; if(node)anchor.parentNode.insertBefore(node,anchor.nextSibling)}
   function enhanceOpenReport(){var body=byId('doc-body'); if(!body)return; var data=currentData(), rows=rowsFor(data); if(!data.length)return; body.querySelectorAll('.v86-pareto-section').forEach(function(n){n.remove()}); var comp=sectionByTitle('Kompensationseffekt'); insertAfter(comp||sectionByTitle('Seasonal Snapshot Benchmark')||sectionByTitle('Gesamtumsatz'),paretoSection(data)); var neg=sectionByTitle('Top 10 negative FY26'); if(neg)neg.innerHTML='<div class="report-section-title">Top 10 negative FY26 Δ vs. 2025 · Anteil am Gesamt-Loss</div>'+impactTable(rows,'neg'); var pos=sectionByTitle('Top 10 positive FY26'); if(pos)pos.innerHTML='<div class="report-section-title">Top 10 positive FY26 Δ vs. 2025 · Anteil an Gesamt-Contribution</div>'+impactTable(rows,'pos');}
-  function runReport(){try{if(typeof window.SAWARO26_V85_TERRITORY_REPORT==='function')window.SAWARO26_V85_TERRITORY_REPORT(); else if(typeof window.SAWARO26_V84_TERRITORY_REPORT==='function')window.SAWARO26_V84_TERRITORY_REPORT(); else if(typeof buildTerritoryReport==='function')buildTerritoryReport(); setTimeout(enhanceOpenReport,60); setTimeout(enhanceOpenReport,220); setTimeout(enhanceOpenReport,650);}catch(e){console.error('v86 report wrapper failed',e); try{if(typeof toast==='function')toast('Territory Report v86 konnte nicht erstellt werden','err')}catch(_){}}}
-  function bind(id){var el=byId(id); if(!el||el.getAttribute('data-v86-report-bound')==='1')return; var clone=el.cloneNode(true); clone.id=id; clone.setAttribute('data-v86-report-bound','1'); clone.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();runReport()},true); el.parentNode.replaceChild(clone,el)}
-  function boot(){['mega-report','btn-territory-report-main','btn-territory-report','deck-territory'].forEach(bind); setTimeout(function(){['mega-report','btn-territory-report-main','btn-territory-report','deck-territory'].forEach(bind)},250); setTimeout(function(){['mega-report','btn-territory-report-main','btn-territory-report','deck-territory'].forEach(bind)},1200); window.SAWARO26_V86_ENHANCE_REPORT=enhanceOpenReport; window.SAWARO26_V86_TERRITORY_REPORT=runReport; console.info(V86+' loaded');}
+  function boot(){window.SAWARO26_R86_PARETO_SECTION=paretoSection; window.SAWARO26_R86_IMPACT_TABLE=impactTable; window.SAWARO26_V86_ENHANCE_REPORT=function(){console.warn('Deprecated post-render enhancement disabled by R8.1');}; window.SAWARO26_V86_TERRITORY_REPORT=function(){console.warn('Deprecated Territory Report wrapper v86; routed to R8.1 canonical builder');return window.SAWARO26_R81_TERRITORY_REPORT&&window.SAWARO26_R81_TERRITORY_REPORT();}; console.info(V86+' helpers loaded for R8.1 canonical builder');}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot); else boot();
 })();
 </script>
 
 
 
+
+<!-- SAWARO_RECOVERY_MARKER
+     ID: R8_1_TERRITORY_REPORT_CONSOLIDATION
+     FUTURE_MODULE: reports/territory/{model,renderer,controller}
+     RESPONSIBILITY: one canonical Territory Report builder; no delayed DOM enhancement and no clone-based button rebinding
+     BASELINE: v178.1 VERIFIED ACCEPTANCE
+     PROTECTED: Truth, Forecast, R7A, R7B, SOS, Import, other report types
+     MIGRATION_PRIORITY: HIGH
+-->
 <!-- SAWARO26 v87 EXCR Risk/Status + Filename Alignment
      Baseline: v86 Pareto + Impact Share Refinement.
      Scope: append-only account-report alignment.
@@ -14354,6 +14472,16 @@ Release status: RECOVERY CANDIDATE / HOLD until same-origin Safari acceptance.
 -->
 
 <!-- SAWARO_RECOVERY_MARKER ID:R7B1_RELEASE_CANDIDATE FUTURE_MODULE:app/release-manifest RESPONSIBILITY:v178.1 R7B.1 Truth Import hotfix candidate only; not production approved -->
+
+<!-- SAWARO_RECOVERY_MARKER
+ID: R8_1_ACCEPTANCE_HOTFIX
+FUTURE_MODULE: reports/territory/{model,renderer,controller}
+RESPONSIBILITY: KPI semantic correction, target uplift/coverage, R7B target adapter, country reconciliation, mobile report readability
+READS: aggregatePortfolio, reportTargetAggSafe, SAWARO26_R7B, snapshotBenchmarkFY26
+WRITES: report HTML only; no STATE/storage/domain mutation
+BASELINE: v179 e7c5b3e6e01559503368fa6938549567f99263f30d5e86d70fa5ea94986baf3c
+MIGRATION_PRIORITY: HIGH
+-->
 </body>
 </html>
 
