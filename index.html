@@ -139,8 +139,8 @@ window.SAWARO_NAV_ICON={"dashboard": "home", "sos": "siren", "calendar": "calend
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f0f0f">
-<meta name="sawaro-build" content="v178.1-20260801-R7B1-TRUTH-IMPORT-HOTFIX · baseline v178 sha256 029aabfd">
-<title>SAWARO26 · COMMANDER D26 · v178.1 R7B.1 Truth Import Hotfix</title>
+<meta name="sawaro-build" content="dynamic-from-SAWARO_BUILD">
+<title>SAWARO26 · COMMANDER D26</title>
 <script>document.documentElement.classList.add('sawaro-booting');</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
@@ -4587,7 +4587,7 @@ function initRadar(onIntruder, isActive){
           Injection Truth Pack
         </div>
         <div class="import-sub">
-          v178.1 nutzt eine datenfreie Shell. Importiere das vollständige Truth-Pack-ZIP oder gemeinsam die drei Pflichtdateien <b>01 turnover/turnover_truth</b>, <b>02 orderbook/orderbook_truth</b> und <b>03 contacts/contacts_truth</b>. Unterstrich-, Bindestrich- und Leerzeichen-Namen werden erkannt. <b>04_lrp_targets</b> kann zusätzlich gewählt werden. Archiv-Manifeste sind Dokumentation und kein Import-Gate. WPA1/WPA2-Overlays bleiben vollständig aus DEVA Umsatz, Orderbook und Forecast ausgeschlossen.
+          SAWARO26 nutzt eine datenfreie Shell. Importiere das vollständige Truth-Pack-ZIP oder gemeinsam die drei Pflichtdateien <b>01 turnover/turnover_truth</b>, <b>02 orderbook/orderbook_truth</b> und <b>03 contacts/contacts_truth</b>. Unterstrich-, Bindestrich- und Leerzeichen-Namen werden erkannt. <b>04_lrp_targets</b> kann zusätzlich gewählt werden. Archiv-Manifeste sind Dokumentation und kein Import-Gate. WPA1/WPA2-Overlays bleiben vollständig aus DEVA Umsatz, Orderbook und Forecast ausgeschlossen.
         </div>
       </div>
     </div>
@@ -4699,14 +4699,42 @@ function initRadar(onIntruder, isActive){
 // MF WAR ROOM v54 · Application Logic
 // ═══════════════════════════════════════════════════════════
 
+/* SAWARO_RECOVERY_MARKER
+   ID: R8_2_5_BUILD_IDENTITY_CONTRACT
+   FUTURE_MODULE: app/release-manifest
+   RESPONSIBILITY: one canonical active release identity for UI, report metadata and exports
+   BASELINE: v180.5 1f6153a15144f2c22c6737d6ca6e67b391e8832cfdf09d66ae094cc429eef0aa PROMOTED WORKING BASELINE
+   PROTECTED: Truth, Forecast, R7A, R7B, Targets, SOS, Import semantics, Report calculations
+*/
+const SAWARO_BUILD = Object.freeze({
+  product: 'SAWARO26 COMMANDER D26',
+  version: 'v180.8.6',
+  recovery: 'R8.2.8.6',
+  title: 'REPORT FINALITY HOTFIX',
+  status: 'CANDIDATE',
+  buildDate: '2026-08-25',
+  buildId: 'v180.8.6-20260825-R8.2.8.6-REPORT-FINALITY-HOTFIX',
+  baselineVersion: 'v180.8.5',
+  baselineStatus: 'CANDIDATE · HIGHRUNNER QA PASS',
+  baselineSha256: 'e35553b08550fd459991cbf5688e28b09517e1ed60496e9c13407791e7923b2d'
+});
+const SAWARO_BUILD_LABEL = [SAWARO_BUILD.product, SAWARO_BUILD.version, SAWARO_BUILD.recovery, SAWARO_BUILD.title, SAWARO_BUILD.status].join(' · ');
+window.SAWARO_BUILD = SAWARO_BUILD;
+window.SAWARO_BUILD_LABEL = SAWARO_BUILD_LABEL;
+(function applySAWAROBuildIdentity(){
+  document.title = SAWARO_BUILD.product + ' · ' + SAWARO_BUILD.version + ' · ' + SAWARO_BUILD.status;
+  const meta = document.querySelector('meta[name="sawaro-build"]');
+  if(meta) meta.setAttribute('content', SAWARO_BUILD.buildId + ' · baseline ' + SAWARO_BUILD.baselineVersion + ' sha256 ' + SAWARO_BUILD.baselineSha256);
+})();
+
 const CONFIG = {
   PASSWORD: '1234',
   AUTH_ENABLED: false,   // v150: Gate laeuft ueber den Boot-Startscreen (#sawaroBoot)
   YEARS: ['14','15','16','17','18','19','20','21','22','23','24','25','FY26'],
-  VERSION: 'SAWARO26 COMMANDER D26 · v178.1 R7B.1 TRUTH IMPORT HOTFIX · RECOVERY CANDIDATE',
-  BUILD_ID: 'v178.1-20260801-R7B1-TRUTH-IMPORT-HOTFIX',
-  BASELINE_COMMIT: 'R7B-v178',
-  BASELINE_FILE_SHA256: '029aabfd5ee4956c0ed0a1665fd4f1f3a298a41e68a9aeb8d768ebc8649e52d2',
+  VERSION: SAWARO_BUILD_LABEL,
+  BUILD_ID: SAWARO_BUILD.buildId,
+  BASELINE_COMMIT: SAWARO_BUILD.baselineVersion + ' · ' + SAWARO_BUILD.baselineStatus,
+  BASELINE_FILE_SHA256: SAWARO_BUILD.baselineSha256,
 };
 window.SAWARO_BUILD_ID = CONFIG.BUILD_ID;
 window.SAWARO_BASELINE_COMMIT = CONFIG.BASELINE_COMMIT;
@@ -5759,6 +5787,14 @@ const SAWARO26_R7A = (() => {
     return {shares,years:rows.length,stability:clamp(1-avg(distances),0,1)};
   };
   let segmentCache={fingerprint:'',profiles:new Map()};
+  /* SAWARO_RECOVERY_MARKER
+     ID: R8_2_2_R7A_SEGMENT_CACHE_INVALIDATION
+     FUTURE_MODULE: domain/forecast/seasonality-cache
+     RESPONSIBILITY: invalidate derived segment profiles when canonical account/segment inputs are replaced or remapped
+     WRITES: R7A private derived cache only; no Truth, STATE, Storage or Forecast formula mutation
+     MIGRATION_PRIORITY: HIGH
+  */
+  const invalidateSegmentProfiles = () => { segmentCache={fingerprint:'',profiles:new Map()}; return true; };
   const segmentProfiles = () => {
     const rows=(STATE?.accounts||[]).filter(a=>getAccountSource(a)!=='extern');
     const fp=[resolveTruthSnapshotDate(),rows.length,rows.reduce((s,a)=>s+n(a?.relevance),0).toFixed(0)].join('|');
@@ -5875,7 +5911,7 @@ const SAWARO26_R7A = (() => {
     else rows.push(['P/V/M same-cutoff','aktuellen artikelreichen Truthpack importieren','warn']);
     return rows;
   };
-  return Object.freeze({VERSION,TYPES,classify,intelligence,enrichForecast,priceVolumeMix,renderSignals,segmentContextSchema:Object.freeze({schema:'SAWARO26_SEGMENT_CONTEXT_V1',required:['status','asOf','factors'],defaultFactor:1})});
+  return Object.freeze({VERSION,TYPES,classify,intelligence,enrichForecast,priceVolumeMix,renderSignals,invalidateSegmentProfiles,segmentContextSchema:Object.freeze({schema:'SAWARO26_SEGMENT_CONTEXT_V1',required:['status','asOf','factors'],defaultFactor:1})});
 })();
 window.SAWARO26_R7A = SAWARO26_R7A;
 
@@ -7111,14 +7147,58 @@ $('print-overlay').addEventListener('click', e => {
 const reportDateStamp = () => new Date().toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'});
 const REPORT_AUTHOR = 'Manfred Foissner';
 const reportGeneratedLine = stamp => `${REPORT_AUTHOR} · ${stamp}`;
-const reportFooter = (code, subject, stamp) => `<div class="report-footer"><span>${reportSafe(code)} · ${REPORT_AUTHOR} · ${stamp}</span><span>${reportSafe(subject || '')}</span></div>`;
+const reportBuildVersion = () => (window.SAWARO_BUILD && window.SAWARO_BUILD.version) || 'UNKNOWN';
+const reportFooter = (code, subject, stamp) => `<div class="report-footer"><span>${reportSafe(code)} · ${REPORT_AUTHOR} · ${stamp} · ${reportSafe(reportBuildVersion())}</span><span>${reportSafe(subject || '')}</span></div>`;
+
+/* SAWARO_RECOVERY_MARKER
+   ID: R8_2_8_6_REPORT_FINALITY
+   FUTURE_MODULE: reports/report-controller
+   RESPONSIBILITY: report-type-specific browser/print filename finality + legacy TRR visibility-label normalization
+   PROTECTED: report arithmetic, Truth/Forecast/R7A/R7B, account report model, SOS/Calendar, Salesforce, persistence
+*/
+const reportFinalityCode = title => {
+  const t = String(title || '').toUpperCase();
+  if (t.includes('STRATEGIC TERRITORY')) return 'STRR';
+  if (t.includes('EXCR')) return 'EXCR';
+  if (t.includes('CPR')) return 'CPR';
+  if (t.includes('CAR') || t.includes('CUSTOMER ARTICLE')) return 'CAR';
+  if (t.includes('SAR') || t.includes('SINGLE ARTICLE')) return 'SAR';
+  if (t.includes('TRR') || t.includes('TERRITORY REPORT')) return 'TRR';
+  return 'REPORT';
+};
+const reportFinalitySubject = (title, subtitle) => {
+  const body = $('doc-body');
+  const main = body && body.querySelector ? body.querySelector('.report-title-main') : null;
+  if (main && String(main.textContent || '').trim()) return String(main.textContent).trim();
+  if (reportFinalityCode(title) === 'STRR') return String(subtitle || 'Territory').split('· FY26')[0].trim() || 'Territory';
+  return String(subtitle || title || 'REPORT').trim() || 'REPORT';
+};
+const reportFinalitySanitize = value => String(value == null ? '' : value)
+  .replace(/\s+/g, ' ').trim()
+  .replace(/[\\/:*?"<>|]+/g, ' ')
+  .replace(/\s+/g, ' ').trim().slice(0,80) || 'REPORT';
+const reportFinalityStamp = d => {
+  d = d || new Date();
+  return String(d.getMonth() + 1).padStart(2,'0') + String(d.getFullYear());
+};
+const reportFinalityApplyTitle = (title, subtitle) => {
+  try {
+    document.title = reportFinalityCode(title) + '-MF-' + reportFinalitySanitize(reportFinalitySubject(title, subtitle)) + '-' + reportFinalityStamp(new Date());
+  } catch (e) {}
+};
+const reportFinalityNormalizeBody = (title, bodyHtml) => {
+  if (reportFinalityCode(title) !== 'TRR') return bodyHtml;
+  return String(bodyHtml == null ? '' : bodyHtml).replace(/<div class="report-kpi-l">OB26<\/div>/g, '<div class="report-kpi-l">FY26 SICHTBAR</div>');
+};
 const openReportHtml = (title, subtitle, bodyHtml) => {
   /* SAWARO_RECOVERY_MARKER ID:R3_REPORT_ENTRY FUTURE_MODULE:reports/report-controller */
   try { SAWARO26_REPORT_GUARD.assertReady(title || 'Management Report'); } catch (error) { return SAWARO26_REPORT_GUARD.notifyBlocked(error); }
   bodyHtml = SAWARO26_REPORT_CONTAINMENT.transform(bodyHtml);
+  bodyHtml = reportFinalityNormalizeBody(title, bodyHtml);
   $('doc-title').textContent = title;
   $('doc-subtitle').textContent = subtitle || '—';
   $('doc-body').innerHTML = bodyHtml;
+  reportFinalityApplyTitle(title, subtitle);
   const artOverlay = $('article-overlay');
   if (artOverlay) {
     artOverlay.classList.remove('open');
@@ -8090,6 +8170,12 @@ const finalizeTruthAccount = a => {
   a.lossRatio = Math.round(a.risk * 10) / 10;
   a.pattern = ob26 > 0 && r25 === 0 ? 'OB_ONLY_REACTIVATION' : (r25 > 0 ? 'RECURRING' : 'HISTORICAL');
   a.obDecline = hasCutoff ? v85BenchBase.pct <= -.20 : obWeak;
+  // R8.2.8.5: article-level Highrunner disappearance is a validation signal.
+  // Use the canonical R7B materiality policy when available; keep the established EUR 25k fallback.
+  const highrunnerFloor = (() => {
+    const n = Number(window.SAWARO26_R7B?.POLICY?.materialityEur);
+    return Number.isFinite(n) && n > 0 ? n : 25000;
+  })();
   a.articles = Object.values(a._articleMap).map(art => {
     art.price = art.rev.map((v,i) => art.qtySeries[i] ? v / art.qtySeries[i] : 0);
     art.totalRev = art.rev.slice(0,12).reduce((s,v)=>s+v,0);
@@ -8102,15 +8188,24 @@ const finalizeTruthAccount = a => {
     art.orderbookOpen26Qty = art.orderbookOpen26Qty || 0;
     art.ob26 = Math.max(0, (Number(art.turnoverYTD26)||0) + (Number(art.orderbookOpen26)||0)); // v65 visible FY26 = TO26 YTD + open OB26
     art.ob26Qty = ((Number(art.turnoverYTD26Qty)||0) + (Number(art.orderbookOpen26Qty)||0));
+    art.missingHighrunner = art.r25 >= highrunnerFloor && art.ob26 <= 0;
     art.r24 = art.rev[10] || 0;
     art.ref = ((art.rev[9] || 0) + (art.rev[10] || 0)) / ((art.rev[9] && art.rev[10]) ? 2 : 1);
     art.delta = art.r25 - art.ref;
     art.activeYears = art.rev.slice(0,12).filter(v => v > 0).length;
     art.lastYear = (() => { for (let i=11;i>=0;i--) if (art.rev[i] > 0) return 2014+i; return null; })();
-    art.hint = art.ob26 > 0 && art.r25 === 0 ? 'FY26 sichtbar ohne 2025-Umsatz' : art.delta < 0 ? 'rückläufig / unter Referenz' : art.delta > 0 ? 'positiv vs. Referenz' : 'historisch / stabil';
+    art.hint = art.missingHighrunner ? 'Highrunner aktuell fehlend / ohne FY26-Sichtbarkeit · Ursache validieren' : art.ob26 > 0 && art.r25 === 0 ? 'FY26 sichtbar ohne 2025-Umsatz' : art.delta < 0 ? 'rückläufig / unter Referenz' : art.delta > 0 ? 'positiv vs. Referenz' : 'historisch / stabil';
     return art;
   }).sort((x,y) => (y.totalRev + y.ob26) - (x.totalRev + x.ob26));
-  a.top10neg = [...a.articles].filter(x => x.delta < 0 || (x.r24 > 0 && x.r25 === 0)).sort((x,y)=>x.delta-y.delta).slice(0,10);
+  a.top10neg = [...a.articles]
+    .filter(x => x.missingHighrunner || x.delta < 0 || (x.r24 > 0 && x.r25 === 0))
+    .sort((x,y) => {
+      const xm = x.missingHighrunner ? 1 : 0, ym = y.missingHighrunner ? 1 : 0;
+      if (xm !== ym) return ym - xm;
+      if (xm && ym && y.r25 !== x.r25) return y.r25 - x.r25;
+      return x.delta - y.delta;
+    })
+    .slice(0,10);
   a.top10pos = [...a.articles].filter(x => x.delta > 0 || x.ob26 > 0).sort((x,y)=>(y.delta + y.ob26*.3)-(x.delta + x.ob26*.3)).slice(0,10);
   a.articleCount = a.articles.length;
   a.dataConfidence = 'INJECTION_TRUTH_PACK_IMPORTED';
@@ -9130,6 +9225,9 @@ const confirmImport = () => {
       else { STATE.accounts.push(r.account); imported++; }
     });
   }
+  // R8.2.2: a Truth/account commit changes the inputs of R7A segment profiles.
+  // Invalidate the private derived cache before any post-commit forecast consumer can run.
+  if (window.SAWARO26_R7A && typeof window.SAWARO26_R7A.invalidateSegmentProfiles === 'function') window.SAWARO26_R7A.invalidateSegmentProfiles();
   const manifestCount = (PENDING_IMPORT.manifestReport || []).filter(x => x.status === 'ok').length;
   if (isTruth) saveTruthMeta(PENDING_IMPORT.truthMeta || emptyTruthMeta());
   else saveTruthMeta({ ...(STATE.truth || emptyTruthMeta()), loaded: STATE.accounts.length > 0, source: 'legacy csv injection', importedAt: new Date().toISOString(), accountsBuilt: STATE.accounts.length });
@@ -9407,6 +9505,9 @@ const applyLRPSegmentsToAccounts = () => {
       var b = best(v);
       if(b){ a.mainSegment = b[0]; a.segment = b[0]; a.lrpSegment = b[0]; n++; }
     });
+    // R8.2.2: segment remapping changes the lookup key used by R7A segmentProfiles().
+    // The previous fingerprint did not encode segment assignments and could therefore reuse stale profiles.
+    if (n && window.SAWARO26_R7A && typeof window.SAWARO26_R7A.invalidateSegmentProfiles === 'function') window.SAWARO26_R7A.invalidateSegmentProfiles();
     return n;
   }catch(e){ console.warn('applyLRPSegmentsToAccounts', e); return 0; }
 };
@@ -9513,27 +9614,43 @@ const saveNativeSOS = () => {
   return master;
 };
 const radarScore = r => Math.max(1, Math.round((Number(r.impact)||1)*2 + (Number(r.urgency)||1) - (Number(r.effort)||2)));
+/* SAWARO_RECOVERY_MARKER
+   ID: R8_2_6_RADAR_MATERIALITY_PRIORITY_RESTORATION
+   FUTURE_MODULE: domain/radar/priority-policy
+   RESPONSIBILITY: enforce the canonical R7B materiality gate before TARGET GAP may become auto-critical
+   READS: aggregateTargetLayer, SAWARO26_R7B.POLICY.materialityEur, radarScore
+   WRITES: RADAR signal classification only; no Truth, Forecast, Target, SOS or Calendar mutation
+   CHANGED: under-materiality target gaps remain visible but are not auto-classified KRITISCH
+   PROTECTED: Truth import, Forecast, R7A, R7B policy values, account runtime, SOS master, CAP4, reports
+*/
+const radarMaterialityEur = () => {
+  const value = Number(window.SAWARO26_R7B?.POLICY?.materialityEur);
+  return Number.isFinite(value) && value > 0 ? value : Number.POSITIVE_INFINITY;
+};
 const buildRadarSignals = data => {
   const rows = [];
   const agg = (STATE.lrp && STATE.lrp.loaded) ? aggregateTargetLayer(data || []) : null;
   if (agg) {
+    const materialityEur = radarMaterialityEur();
     agg.acctRows.forEach(r => {
       const target = Number(r.activeTarget || r.stretch || r.target)||0, forecast = Number(r.forecast)||0, gap = Math.max(0, target - forecast);
       const coverage = target > 0 ? forecast / target : 0;
       if (target > 0 && (gap > 0 || coverage < .85)) {
-        const cls = coverage < .55 ? 'red' : coverage < .85 ? 'amber' : 'cyan';
+        const materialGap = gap >= materialityEur;
+        const criticalTargetGap = coverage < .55 && materialGap;
+        const cls = criticalTargetGap ? 'red' : coverage < .85 ? 'amber' : 'cyan';
         rows.push({
           id:'radar-' + (r.account.id || normKey(r.account.name)),
-          type: coverage < .55 ? 'CRITICAL TARGET GAP' : 'TARGET COVERAGE GAP',
+          type: criticalTargetGap ? 'CRITICAL TARGET GAP' : 'TARGET COVERAGE GAP',
           cls,
           account: r.account,
           title: r.account.name,
-          note: `${r.stretch ? 'Stretch26' : 'LRP26'} ${fmt.eur(target)} · FY26 ${fmt.eur(forecast)} · Gap ${fmt.eur(gap)} · Coverage ${(coverage*100).toFixed(0)}%`,
-          impact: coverage < .55 ? 5 : 4,
-          urgency: gap > 250000 ? 5 : 4,
+          note: `${r.stretch ? 'Stretch26' : 'LRP26'} ${fmt.eur(target)} · FY26 ${fmt.eur(forecast)} · Gap ${fmt.eur(gap)} · Coverage ${(coverage*100).toFixed(0)}%${materialGap ? '' : ' · unter Materiality Gate'}`,
+          impact: criticalTargetGap ? 5 : 4,
+          urgency: criticalTargetGap && gap > 250000 ? 5 : 4,
           effort: 2,
-          due: sosAddDaysISO(sosISO(new Date()), coverage < .55 ? 2 : 5),
-          target, forecast, gap, coverage
+          due: sosAddDaysISO(sosISO(new Date()), criticalTargetGap ? 2 : 5),
+          target, forecast, gap, coverage, materialityEur, materialGap
         });
       }
     });
@@ -9608,7 +9725,7 @@ const proposalToSOSAction = p => {
     reason: String(p.note || ''),
     next_step: 'Signal validieren, Kundenkontakt durchführen und Ergebnis dokumentieren.',
     owner: 'MF', priority: sosPriorityLabel(radarScore(p)), status: 'PLANNED',
-    due_date: due, created_at: sosISO(new Date()), last_touch: sosISO(new Date()), follow_up_date: sosAddDaysISO(due, 3),
+    due_date: due, planned_execution_date: due, execution_date_migration_status: 'DIRECT', created_at: sosISO(new Date()), last_touch: sosISO(new Date()), follow_up_date: sosAddDaysISO(due, 3),
     commercial_impact_eur: Number(p.gap || 0), risk_type: String(p.type || 'Revenue Risk'),
     outcome: '', outcome_note: '', progress: 10, includeInWeekly: true,
     source: 'SAWARO26_RADAR'
@@ -9628,8 +9745,9 @@ const acceptRadarProposal = id => {
   if (!p) return;
   const action = proposalToSOSAction(p);
   if (!addSOSActionUnique(action)) { toast('RADAR Proposal bereits im SOS Master', 'info'); return; }
-  STATE.sos.weekStart = sosMondayFromISO(action.due_date);
-  saveNativeSOS(); renderSOSCalendar(); renderRadarLayer(getFiltered());
+  saveNativeSOS();
+  STATE.sos.weekStart = sosMondayFromISO(action.planned_execution_date || action.due_date);
+  renderSOSCalendar(); renderRadarLayer(getFiltered());
   try { if (window.SOSX && typeof window.SOSX.refresh === 'function') window.SOSX.refresh(); } catch (e) {}
   toast('RADAR Proposal in SOS Master übernommen', 'ok');
 };
@@ -9637,9 +9755,12 @@ const acceptTopRadarProposals = () => {
   ensureNativeSOS();
   const top = (LAST_RADAR_SIGNALS.length ? LAST_RADAR_SIGNALS : buildRadarSignals(getFiltered())).slice(0,5);
   if (!top.length) { toast('Keine RADAR Proposals vorhanden', 'info'); return; }
-  let added = 0; top.forEach(p => { if (addSOSActionUnique(proposalToSOSAction(p))) added++; });
-  if (top[0]) STATE.sos.weekStart = sosMondayFromISO(top[0].due);
-  saveNativeSOS(); renderSOSCalendar(); renderRadarLayer(getFiltered());
+  let added = 0, addedActions = [];
+  top.forEach(p => { const action = proposalToSOSAction(p); if (addSOSActionUnique(action)) { added++; addedActions.push(action); } });
+  saveNativeSOS();
+  const firstPlanned = addedActions.slice().sort((a,b)=>String(a.planned_execution_date||a.due_date||'').localeCompare(String(b.planned_execution_date||b.due_date||'')))[0];
+  if (firstPlanned) STATE.sos.weekStart = sosMondayFromISO(firstPlanned.planned_execution_date || firstPlanned.due_date);
+  renderSOSCalendar(); renderRadarLayer(getFiltered());
   try { if (window.SOSX && typeof window.SOSX.refresh === 'function') window.SOSX.refresh(); } catch (e) {}
   toast(`${added} RADAR Action(s) in SOS Master übernommen`, 'ok');
 };
@@ -9658,7 +9779,7 @@ const followUpSOS = id => {
   const a = STATE.sos.actions.find(x => (x.action_id || x.id) === id); if (!a) return;
   const due = sosAddDaysISO(a.due_date || a.due || sosISO(new Date()), 7);
   const actionId = window.SOSX && typeof window.SOSX.nextId === 'function' ? window.SOSX.nextId() : 'SOS-ACT-' + String(Date.now()).slice(-6);
-  STATE.sos.actions.push({...a, action_id:actionId, source_signal_id:'', parent_action_id:a.action_id || a.id || '', source_action_id:a.action_id || a.id || '', title:'Follow-up · ' + a.title, status:'PLANNED', due_date:due, created_at:sosISO(new Date()), last_touch:sosISO(new Date()), follow_up_date:sosAddDaysISO(due,6), outcome:'', outcome_note:'', progress:10});
+  STATE.sos.actions.push({...a, action_id:actionId, source_signal_id:'', parent_action_id:a.action_id || a.id || '', source_action_id:a.action_id || a.id || '', title:'Follow-up · ' + a.title, status:'PLANNED', due_date:due, planned_execution_date:due, execution_date_migration_status:'DIRECT', created_at:sosISO(new Date()), last_touch:sosISO(new Date()), follow_up_date:sosAddDaysISO(due,6), outcome:'', outcome_note:'', progress:10});
   saveNativeSOS(); renderSOSCalendar(); renderRadarLayer(getFiltered());
   try { if (window.SOSX && typeof window.SOSX.refresh === 'function') window.SOSX.refresh(); } catch (e) {}
 };
@@ -9670,15 +9791,19 @@ const sosMondayFromISO = iso => {
 const sosPriorityWeight = p => ({KRITISCH:4,HOCH:3,MITTEL:2,NIEDRIG:1}[String(p||'').toUpperCase()] || Number(p) || 0);
 const sosActionCardHTML = a => {
   const id = a.action_id || a.id || '';
-  const due = a.due_date || a.due || '';
+  const due = String(a.due_date || a.due || '').slice(0,10);
+  const planned = String(a.planned_execution_date || due || '').slice(0,10);
+  const dateMeta = due && planned && due !== planned ? `Fällig ${due} · Geplant ${planned}` : `Fällig/geplant ${due || planned || '—'}`;
   const account = a.account_name || a.customer || a.accountName || '';
   const status = String(a.status || 'PLANNED').toUpperCase();
-  return `<div class="sos-action ${status.toLowerCase()}"><div class="sos-action-title">${escapeHtml(a.title)}</div><div class="sos-action-meta">${escapeHtml(account)} · Due ${escapeHtml(String(due).slice(0,10) || '—')} · ${escapeHtml(a.priority || '—')} · ${escapeHtml(status)}</div><div class="sos-action-buttons"><button onclick="setSOSStatus('${id}','Done')">Done</button><button onclick="setSOSStatus('${id}','Blocked')">Block</button><button onclick="setSOSStatus('${id}','Open')">Open</button><button onclick="followUpSOS('${id}')">Follow-up</button></div></div>`;
+  return `<div class="sos-action ${status.toLowerCase()}"><div class="sos-action-title">${escapeHtml(a.title)}</div><div class="sos-action-meta">${escapeHtml(account)} · ${escapeHtml(dateMeta)} · ${escapeHtml(a.priority || '—')} · ${escapeHtml(status)}</div><div class="sos-action-buttons"><button onclick="setSOSStatus('${id}','Done')">Done</button><button onclick="setSOSStatus('${id}','Blocked')">Block</button><button onclick="setSOSStatus('${id}','Open')">Open</button><button onclick="followUpSOS('${id}')">Follow-up</button></div></div>`;
 };
 const renderSOSCalendar = () => {
   if (!$('sos-calendar')) return;
   ensureNativeSOS();
+  try { if (window.SOSX && typeof window.SOSX.ensureCriticalCapacity === 'function') window.SOSX.ensureCriticalCapacity(); } catch (e) { console.warn('native calendar execution-capacity sync', e); }
   const active = a => !['DONE','CANCELLED'].includes(String(a.status||'').toUpperCase());
+  const execDate = a => String((a && (a.planned_execution_date || a.due_date || a.due)) || '').slice(0,10);
   const open = STATE.sos.actions.filter(active).length;
   const done = STATE.sos.actions.filter(a=>String(a.status||'').toUpperCase()==='DONE').length;
   const blocked = STATE.sos.actions.filter(a=>/WAITING|ESCALATED|BLOCK/i.test(String(a.status||''))).length;
@@ -9690,14 +9815,14 @@ const renderSOSCalendar = () => {
   let html = '';
   for (let i=0;i<5;i++) {
     const day = sosAddDaysISO(STATE.sos.weekStart, i);
-    const dayActions = STATE.sos.actions.filter(a => String(a.due_date || a.due || '').slice(0,10) === day).sort((a,b)=>sosPriorityWeight(b.priority)-sosPriorityWeight(a.priority));
+    const dayActions = STATE.sos.actions.filter(a => execDate(a) === day).sort((a,b)=>sosPriorityWeight(b.priority)-sosPriorityWeight(a.priority));
     html += `<div class="sos-day"><div class="sos-day-head"><span>${sosFormatDay(day)}</span><span class="sos-day-date">${day}</span></div>` +
       (dayActions.map(sosActionCardHTML).join('') || '<div class="sos-action"><div class="sos-action-meta">Keine Actions in diesem Tagesblock.</div></div>') + '</div>';
   }
   $('sos-calendar').innerHTML = html;
-  const all = [...STATE.sos.actions].sort((a,b)=> String(a.due_date||a.due||'9999').localeCompare(String(b.due_date||b.due||'9999')) || sosPriorityWeight(b.priority)-sosPriorityWeight(a.priority));
+  const all = [...STATE.sos.actions].sort((a,b)=> execDate(a).localeCompare(execDate(b)) || sosPriorityWeight(b.priority)-sosPriorityWeight(a.priority));
   const today = sosISO(new Date());
-  if ($('sos-agenda-note')) $('sos-agenda-note').textContent = `${all.length} total · ${open} open · SOS Master`;
+  if ($('sos-agenda-note')) $('sos-agenda-note').textContent = `${all.length} total · ${open} open · SOS Master · Execution-Ansicht`;
   if ($('sos-agenda')) $('sos-agenda').innerHTML = all.map(a => `<div class="sos-agenda-item ${active(a) && String(a.due_date||a.due||'') < today ? 'overdue' : ''}">${sosActionCardHTML(a)}</div>`).join('') || '<div class="sos-agenda-item"><div class="sos-action-meta">Noch keine SOS Actions übernommen.</div></div>';
 };
 const openSOSModal = () => { ensureNativeSOS(); renderSOSCalendar(); if ($('sos-modal')) $('sos-modal').classList.add('open'); };
@@ -10723,6 +10848,43 @@ try{ if(typeof snapshotSummary==='function') window.__SR_snapshotSummary=snapsho
 @media (max-width:620px){#sosx-root .ccr-cols{grid-template-columns:1fr}}
 #sosx-root .report{border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.18);border-radius:24px;padding:15px;color:var(--soft);line-height:1.5}#sosx-root .report h2, #sosx-root .report h3{color:var(--text);margin:0 0 8px}#sosx-root .report p{margin:8px 0}#sosx-root .report ul{padding-left:18px}#sosx-root .report li{margin:5px 0}#sosx-root .toast{position:fixed;z-index:200;left:14px;right:14px;bottom:calc(92px + var(--safe-bottom));border:1px solid rgba(128,238,77,.24);background:linear-gradient(180deg,#151c16,#080c08);border-radius:22px;padding:13px 14px;color:var(--text);font-size:13px;box-shadow:var(--shadow);display:none}#sosx-root .toast.show{display:block}#sosx-root .modal{position:fixed;inset:0;z-index:140;background:rgba(0,0,0,.72);backdrop-filter:blur(18px);display:none;padding:14px;overflow:auto}#sosx-root .modal.open{display:block}#sosx-root .modal-panel{width:min(900px,100%);margin:4vh auto;border:1px solid rgba(255,255,255,.11);background:linear-gradient(180deg,#151c16,#080c08);border-radius:32px;padding:16px;box-shadow:0 30px 90px rgba(0,0,0,.72)}#sosx-root .split{display:grid;gap:12px}#sosx-root .hidden-file{display:none!important}#sosx-root .desktop-only{display:none}#sosx-root .mobile-only{display:block}#sosx-root .wherebar{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));z-index:45;margin:0 0 12px;border:1px solid rgba(128,238,77,.22);border-radius:24px;background:linear-gradient(180deg,rgba(16,21,16,.84),rgba(7,11,7,.74));backdrop-filter:blur(18px);box-shadow:0 16px 40px rgba(0,0,0,.28);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}#sosx-root .wherebar span{display:block;color:var(--lime);font-size:9px;font-weight:950;letter-spacing:.18em;text-transform:uppercase}#sosx-root .wherebar b{display:block;margin-top:3px;font-size:15px;letter-spacing:-.025em}#sosx-root .wherebar small{display:block;margin-top:2px;color:var(--muted);font-size:11px;line-height:1.25}#sosx-root .wherebar .tiny{flex:0 0 auto;color:var(--lime);border-color:rgba(128,238,77,.32);background:rgba(128,238,77,.075)}#sosx-root .calendar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}#sosx-root .calendar-toolbar h2{margin:0;font-size:22px;letter-spacing:-.045em}#sosx-root .calendar-toolbar p{margin:4px 0 0;color:var(--muted);font-size:12px}#sosx-root .calendar-grid{display:grid;grid-template-columns:minmax(30px,auto) repeat(7,minmax(0,1fr));gap:7px;align-items:stretch}#sosx-root .cal-kw{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:950;color:var(--lime);background:rgba(130,232,79,.06);border:1px solid rgba(130,232,79,.16);border-radius:8px;min-height:34px}#sosx-root .cal-kw-head{color:var(--lime);opacity:.8}#sosx-root .cal-kw-badge{display:inline-block;margin-left:8px;font-size:11px;font-weight:950;color:#061006;background:var(--lime);border-radius:999px;padding:2px 9px;letter-spacing:.02em;vertical-align:middle}#sosx-root .cal-weekday{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.11em;font-weight:950;text-align:center;padding:0 0 4px}#sosx-root .cal-day{min-height:78px;border:1px solid rgba(255,255,255,.075);border-radius:18px;background:rgba(255,255,255,.032);padding:7px;display:flex;flex-direction:column;gap:5px;overflow:hidden}#sosx-root .cal-day.out{opacity:.34}#sosx-root .cal-day.today{border-color:rgba(128,238,77,.55);box-shadow:0 0 0 1px rgba(128,238,77,.18),0 14px 30px rgba(128,238,77,.08)}#sosx-root .cal-day.selected{background:rgba(128,238,77,.10);border-color:rgba(128,238,77,.68)}#sosx-root .cal-num{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:950;color:var(--soft)}#sosx-root .cal-badge{font-size:9px;color:#071006;background:var(--lime);border-radius:999px;min-width:18px;height:18px;display:grid;place-items:center;padding:0 5px}#sosx-root .cal-task{display:block;border-radius:9px;padding:4px 5px;font-size:9px;font-weight:850;line-height:1.12;color:var(--soft);background:rgba(255,255,255,.055);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#sosx-root .cal-task.critical{color:#ffc5c9;background:rgba(255,80,93,.14)}#sosx-root .cal-task.high{color:var(--amber);background:rgba(255,190,77,.12)}#sosx-root .calendar-agenda-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}#sosx-root .calendar-agenda-head small{color:var(--muted);font-size:11px}#sosx-root .date-jump{display:flex;gap:8px;overflow:auto;padding:2px 0 6px}#sosx-root .date-pill{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:var(--muted);border-radius:18px;padding:9px 10px;min-width:72px;text-align:center}#sosx-root .date-pill b{display:block;color:var(--soft);font-size:16px}#sosx-root .date-pill span{font-size:10px;font-weight:900;text-transform:uppercase}#sosx-root .date-pill.active{color:#071006;background:linear-gradient(180deg,#a7ff74,#5ddb36);border-color:rgba(128,238,77,.7)}#sosx-root .date-pill.active b, #sosx-root .date-pill.active span{color:#071006}@media(min-width:760px){#sosx-root .kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr))}#sosx-root .form-grid{grid-template-columns:1fr 1fr}#sosx-root .board{grid-template-columns:repeat(2,minmax(0,1fr))}#sosx-root .split{grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr)}#sosx-root .signal-grid{grid-template-columns:repeat(4,1fr)}}@media(min-width:1040px){#sosx-root .shell{padding:22px 24px 28px 308px}#sosx-root .wherebar{top:18px;margin-bottom:16px}#sosx-root .topbar{display:none}#sosx-root .desktop-rail{display:flex;position:fixed;z-index:70;left:18px;top:18px;bottom:18px;width:260px;border:1px solid rgba(255,255,255,.09);border-radius:34px;background:linear-gradient(180deg,rgba(18,24,18,.88),rgba(6,9,6,.94));backdrop-filter:blur(18px);box-shadow:var(--shadow);padding:18px;flex-direction:column}#sosx-root .desktop-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}#sosx-root .desktop-brand .mark{width:48px;height:48px}#sosx-root .desktop-brand b{display:block;font-size:18px;letter-spacing:.22em}#sosx-root .desktop-brand b span{color:var(--lime)}#sosx-root .desktop-brand small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.18em}#sosx-root .railnav{display:grid;gap:8px}#sosx-root .railnav button{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);color:var(--soft);border-radius:20px;padding:12px;font-size:13px;font-weight:900}#sosx-root .railnav button svg{width:18px;height:18px}#sosx-root .railnav button.active{color:#071006;background:linear-gradient(180deg,#a7ff74,#5ddb36);border-color:rgba(128,238,77,.72)}#sosx-root .rail-pulse{margin-top:auto;border:1px solid rgba(128,238,77,.20);border-radius:24px;padding:13px;background:rgba(128,238,77,.055)}#sosx-root .pulse-row{display:flex;justify-content:space-between;color:var(--soft);font-size:12px;margin-top:9px}#sosx-root .pulse-row b{color:var(--text)}#sosx-root .bottomnav{display:none}#sosx-root .hero{padding-top:6px}#sosx-root .h1{font-size:42px}#sosx-root .main-dashboard{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(340px,.75fr);gap:14px}#sosx-root .board{grid-template-columns:repeat(4,minmax(0,1fr))}#sosx-root .desktop-only{display:block}#sosx-root .mobile-only{display:none}#sosx-root .toast{left:auto;width:380px;right:24px;bottom:24px}#sosx-root .gate{padding-left:308px}#sosx-root .gate-card{width:min(500px,100%)}#sosx-root .gate-logo{width:330px}}@media(print){#sosx-root body{background:#fff;color:#111}#sosx-root .desktop-rail, #sosx-root .bottomnav, #sosx-root .topbar, #sosx-root .buttons, #sosx-root .btn, #sosx-root .tiny, #sosx-root .modal, #sosx-root .toast{display:none!important}#sosx-root .shell{padding:0}#sosx-root .screen{display:block!important}#sosx-root .screen:not(.active){display:none!important}#sosx-root .card, #sosx-root .action, #sosx-root .proposal, #sosx-root .report{box-shadow:none;background:#fff!important;border-color:#ccc;color:#111;break-inside:avoid}#sosx-root .sub, #sosx-root .meta, #sosx-root .note, #sosx-root .report{color:#333}#sosx-root .chip{color:#111;border-color:#999;background:#fff}#sosx-root .h1, #sosx-root .card h2, #sosx-root .card h3, #sosx-root .title{color:#111}}
 
+/* ===== R8.2.7 SOS PRIORITY + SIGNAL VISUAL CONTRACT =====
+   Renderer-only. Canonical sources: action.priority + action.risk_type.
+   Priority wins over opportunity/chance styling.
+*/
+#sosx-root .chip.neutral{border-color:rgba(190,200,190,.24);color:#c7d0c7;background:rgba(190,200,190,.065)}
+#sosx-root .chip.muted{border-color:rgba(150,160,150,.18);color:#929c92;background:rgba(150,160,150,.035)}
+#sosx-root .signal-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}
+#sosx-root .signal-chip{display:inline-flex;align-items:center;max-width:100%;border:1px solid rgba(190,200,190,.18);background:rgba(190,200,190,.04);border-radius:999px;padding:5px 8px;color:#aeb8ae;font-size:9.5px;font-weight:900;letter-spacing:.055em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sosx-root .signal-chip.chance{border-color:rgba(128,238,77,.34);background:rgba(128,238,77,.075);color:var(--lime)}
+#sosx-root .action.chance{border-color:rgba(128,238,77,.36);box-shadow:inset 3px 0 0 rgba(128,238,77,.85);background:linear-gradient(90deg,rgba(128,238,77,.105),rgba(255,255,255,.035))}
+#sosx-root .action.medium{border-color:rgba(190,200,190,.18);box-shadow:inset 3px 0 0 rgba(190,200,190,.34)}
+#sosx-root .action.low{opacity:.82;border-color:rgba(150,160,150,.13);box-shadow:inset 3px 0 0 rgba(150,160,150,.20)}
+#sosx-root .proposal.chance{border-color:rgba(128,238,77,.40);box-shadow:inset 4px 0 0 var(--lime);background:linear-gradient(90deg,rgba(128,238,77,.085),rgba(255,255,255,.035))}
+#sosx-root .proposal.medium{border-color:rgba(190,200,190,.18);box-shadow:inset 4px 0 0 rgba(190,200,190,.30)}
+#sosx-root .proposal.low{opacity:.84;border-color:rgba(150,160,150,.13);box-shadow:inset 4px 0 0 rgba(150,160,150,.18)}
+#sosx-root .cal-task{white-space:normal;min-width:0}
+#sosx-root .cal-task-head{display:flex;align-items:center;gap:4px;min-width:0}
+#sosx-root .cal-task-head>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#sosx-root .cal-prio-mini{width:15px;height:15px;flex:0 0 15px;border-radius:999px;display:inline-grid;place-items:center;font-size:8px;font-weight:950;line-height:1;background:rgba(190,200,190,.16);color:#d2d9d2}
+#sosx-root .cal-reason{display:block;margin-top:2px;font-size:7.5px;font-weight:850;line-height:1.05;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+#sosx-root .cal-task.critical{color:#ffc5c9;background:rgba(255,80,93,.14)}
+#sosx-root .cal-task.critical .cal-prio-mini{background:rgba(255,80,93,.92);color:#160406}
+#sosx-root .cal-task.critical .cal-reason{color:#ffabb1}
+#sosx-root .cal-task.high{color:var(--amber);background:rgba(255,190,77,.12)}
+#sosx-root .cal-task.high .cal-prio-mini{background:rgba(255,190,77,.92);color:#171004}
+#sosx-root .cal-task.high .cal-reason{color:#e9ba67}
+#sosx-root .cal-task.chance{color:var(--lime);background:rgba(128,238,77,.11)}
+#sosx-root .cal-task.chance .cal-prio-mini{background:rgba(128,238,77,.90);color:#071006}
+#sosx-root .cal-task.chance .cal-reason{color:#9be675}
+#sosx-root .cal-task.medium{color:#c7d0c7;background:rgba(190,200,190,.065)}
+#sosx-root .cal-task.low{color:#899389;background:rgba(150,160,150,.035)}
+@media(max-width:520px){
+  #sosx-root .cal-reason{display:none}
+  #sosx-root .signal-chip{max-width:220px}
+}
+
+
 /* ===== SOSX MERGE: overlay shell ===== */
 #sosx-overlay{position:fixed;inset:0;z-index:99999;display:none;background:#050806}
 #sosx-overlay.open{display:block}
@@ -10811,11 +10973,11 @@ try{ if(typeof snapshotSummary==='function') window.__SR_snapshotSummary=snapsho
 
     <section id="sosx-screen-calendar" class="screen">
       <div class="hero"><div class="eyebrow">SOS Kalender</div><h1 class="h1">Tasks sehen. Tag wählen. Action öffnen.</h1><p class="lead">Kalender, Agenda und nächste 7 Tage nutzen denselben Action-State. Kein zweiter Task-Speicher, keine Parallelwelt.</p></div>
-      <div class="grid kpi-grid"><div class="card kpi amber"><b id="sosx-calWeek">0</b><span>Fällig 7 Tage</span></div><div class="card kpi red"><b id="sosx-calLate">0</b><span>Überfällig</span></div><div class="card kpi"><b id="sosx-calSelected">0</b><span>Gewählter Tag</span></div><div class="card kpi lime"><b id="sosx-calDone">0</b><span>Erledigt</span></div></div>
+      <div class="grid kpi-grid"><div class="card kpi amber"><b id="sosx-calWeek">0</b><span>Geplant 7 Tage</span></div><div class="card kpi red"><b id="sosx-calLate">0</b><span>Überfällig</span></div><div class="card kpi"><b id="sosx-calSelected">0</b><span>Gewählter Tag</span></div><div class="card kpi lime"><b id="sosx-calDone">0</b><span>Erledigt</span></div></div>
       <div class="date-jump section" id="sosx-dateJump"></div>
       <div class="split section">
         <div class="card">
-          <div class="calendar-toolbar"><button class="tiny" onclick="SOSX.moveCalendar(-1)">←</button><div><h2 id="sosx-calendarMonth">Monat</h2><p id="sosx-calendarSummary">Tasks nach Due Date</p></div><button class="tiny" onclick="SOSX.moveCalendar(1)">→</button></div>
+          <div class="calendar-toolbar"><button class="tiny" onclick="SOSX.moveCalendar(-1)">←</button><div><h2 id="sosx-calendarMonth">Monat</h2><p id="sosx-calendarSummary">Tasks nach geplantem Ausführungstag</p></div><button class="tiny" onclick="SOSX.moveCalendar(1)">→</button></div>
           <div class="calendar-grid" id="sosx-calendarWeekdays"></div>
           <div class="calendar-grid" id="sosx-calendarGrid"></div>
         </div>
@@ -10894,7 +11056,9 @@ const $=id=>document.getElementById(id);const _pad=n=>String(n).padStart(2,"0");
 const priorities=['KRITISCH','HOCH','MITTEL','NIEDRIG'];const statuses=['PLANNED','IN_PROGRESS','WAITING_CUSTOMER','WAITING_INTERNAL','ESCALATED','DONE','CANCELLED'];const outcomes=['','WON','ADVANCED','PENDING','LOST_TO_COMPETITOR','NO_RESPONSE','DEFERRED','STRUCTURALLY_LOST'];const segments=['Hydro','Wind','Heavy duty','Gas and steam','Offshore','Railway','Waste to energy','Steel','Tire molds','Injection molding','Polyester','General industry','Energy','Industry','Transportation','Others','Unassigned / Check'];const riskTypes=['Revenue Risk','Opportunity','Low-Hanging Fruit','Relationship Risk','Internal Blocker','Strategic Escalation'];
 const SOSX_RISKTYPE=t=>{t=String(t||"").toUpperCase();if(t.indexOf("STRUCTURAL")>=0)return"Strategic Escalation";if(t.indexOf("DEFEND")>=0)return"Revenue Risk";if(t.indexOf("CRITICAL")>=0||t.indexOf("TARGET")>=0)return"Revenue Risk";if(t.indexOf("VISIBILITY")>=0)return"Opportunity";return"Opportunity";};const SOSX_SEGMAP=s=>{s=String(s||"").toLowerCase();if(s.indexOf("wasserturbin")>=0||s.indexOf("hydro")>=0)return"Hydropower";if(s.indexOf("schienen")>=0||s.indexOf("rail")>=0)return"Mobility / Rail";if(s.indexOf("spritz")>=0||s.indexOf("oem")>=0||s.indexOf("maschinen")>=0)return"Machinery / OEM";if(s.indexOf("ersatz")>=0||s.indexOf("spare")>=0||s.indexOf("aftermarket")>=0)return"Aftermarket / Spare Parts";return"General Industry";};const SOSX_PRIO=score=>{score=Number(score)||0;return score>=11?"KRITISCH":score>=8?"HOCH":score>=5?"MITTEL":"NIEDRIG";};function buildLiveSignals(){  try{    if(typeof buildRadarSignals!=="function")return [];    var data=(typeof getFiltered==="function")?getFiltered():((typeof STATE!=="undefined"&&STATE.accounts)?STATE.accounts:[]);    var sigs=buildRadarSignals(data||[])||[];    var sc=(typeof radarScore==="function")?radarScore:(s=>Number(s.impact||0)*2+Number(s.urgency||0));    return sigs.map(function(s){      var acc=s.account||{};      var impact=Number(s.gap||s.target||0)||0;      return {        signal_id:String(s.id||("RADAR-"+(acc.id||s.title))),        account_id:String(acc.id||""),        account_name:String(s.title||acc.name||"Account"),        main_segment:(acc.mainSegment&&acc.mainSegment!=="—")?String(acc.mainSegment):SOSX_SEGMAP(acc.segment),        title:String(s.type||"RADAR Signal"),        reason:String(s.note||""),        next_step:"Naechsten konkreten Kontakt/Schritt definieren und Ergebnis dokumentieren.",        priority:SOSX_PRIO(sc(s)),        due_date:String(s.due||today),        commercial_impact_eur:impact,        risk_type:SOSX_RISKTYPE(s.type),        visibility:""      };    });  }catch(e){console.warn("buildLiveSignals failed",e);return [];}}Object.defineProperty(window,"__SOSX_SIGNALS",{get:buildLiveSignals,configurable:true});let radarSignals=buildLiveSignals();
 const seed=[];
-let state=load(),active='dashboard',selectedActionId='SOS-ACT-000001',selectedActionSource='',calendarCursor=today,selectedDate=today;function enterApp(){var g=$('sosx-gate');if(g)g.classList.add('hide');var a=$('sosx-app');if(a)a.classList.remove('hide');renderAll();}$('sosx-gatePass').addEventListener('keydown',e=>{if(e.key==='Enter')enterApp()});function load(){var _pmap={PLANNED:10,IN_PROGRESS:50,WAITING_CUSTOMER:65,WAITING_INTERNAL:65,ESCALATED:75,DONE:100,CANCELLED:0};var _fix=function(st){if(st&&Array.isArray(st.actions)){st.actions.forEach(function(a){a.priority=sosxNormPriority(a.priority);if(a.progress==null||a.progress===0){var d=_pmap[a.status];if(d!=null)a.progress=d;}if(!a.alert_id){try{a.alert_id=srAlertId({account_id:a.account_id,title:a.title,risk_type:a.risk_type});}catch(e){}}});var _seen={},_out=[];st.actions.forEach(function(a){var k=a.action_id?('ID|'+a.action_id):('SIG|'+String(a.alert_id||'')+'|'+String(a.account_id||'')+'|'+String(a.title||'')+'|'+String(a.due_date||'')+'|'+String(a.created_at||''));if(_seen[k]!==undefined){var pi=_seen[k],prev=_out[pi],ps=(prev.status==='DONE'?4:0)+(prev.outcome?2:0)+(prev.outcome_note?1:0),ns=(a.status==='DONE'?4:0)+(a.outcome?2:0)+(a.outcome_note?1:0);if(ns>ps)_out[pi]=a;return;}_seen[k]=_out.length;_out.push(a);});st.actions=_out;}return st;};try{const s=JSON.parse(localStorage.getItem(storageKey));if(s&&Array.isArray(s.actions))return _fix(s)}catch(e){}try{const s=JSON.parse(localStorage.getItem(storageKey+'_REDUNDANT'));if(s&&Array.isArray(s.actions))return _fix(s)}catch(e){}try{const s=JSON.parse(localStorage.getItem(legacyStorageKey));if(s&&Array.isArray(s.actions)){s.version='4.0-migrated';return _fix(s)}}catch(e){}return{version:'4.0',created_at:today,updated_at:today,actions:JSON.parse(JSON.stringify(seed)),thread_notes:{}}}var SAWARO_BACKUP=(function(){
+/* SAWARO_RECOVERY_MARKER ID:R8_2_8_EXECUTION_DATE_CONTRACT FUTURE_MODULE:domain/sos/execution-date-contract */
+const SOSX_DATE_CONTRACT='R8_2_8_DUE_DATE_PLANNED_EXECUTION_V1';
+let state=load(),active='dashboard',selectedActionId='SOS-ACT-000001',selectedActionSource='',calendarCursor=today,selectedDate=today;function enterApp(){var g=$('sosx-gate');if(g)g.classList.add('hide');var a=$('sosx-app');if(a)a.classList.remove('hide');renderAll();}$('sosx-gatePass').addEventListener('keydown',e=>{if(e.key==='Enter')enterApp()});function load(){var _pmap={PLANNED:10,IN_PROGRESS:50,WAITING_CUSTOMER:65,WAITING_INTERNAL:65,ESCALATED:75,DONE:100,CANCELLED:0};var _fix=function(st){if(st&&Array.isArray(st.actions)){st.actions.forEach(function(a){a.priority=sosxNormPriority(a.priority);sosxMigrateExecutionDate(a);if(a.progress==null||a.progress===0){var d=_pmap[a.status];if(d!=null)a.progress=d;}if(!a.alert_id){try{a.alert_id=srAlertId({account_id:a.account_id,title:a.title,risk_type:a.risk_type});}catch(e){}}});var _seen={},_out=[];st.actions.forEach(function(a){var k=a.action_id?('ID|'+a.action_id):('SIG|'+String(a.alert_id||'')+'|'+String(a.account_id||'')+'|'+String(a.title||'')+'|'+String(a.due_date||'')+'|'+String(a.created_at||''));if(_seen[k]!==undefined){var pi=_seen[k],prev=_out[pi],ps=(prev.status==='DONE'?4:0)+(prev.outcome?2:0)+(prev.outcome_note?1:0),ns=(a.status==='DONE'?4:0)+(a.outcome?2:0)+(a.outcome_note?1:0);if(ns>ps)_out[pi]=a;return;}_seen[k]=_out.length;_out.push(a);});st.actions=_out;st.sosx_date_contract=SOSX_DATE_CONTRACT;}return st;};try{const s=JSON.parse(localStorage.getItem(storageKey));if(s&&Array.isArray(s.actions))return _fix(s)}catch(e){}try{const s=JSON.parse(localStorage.getItem(storageKey+'_REDUNDANT'));if(s&&Array.isArray(s.actions))return _fix(s)}catch(e){}try{const s=JSON.parse(localStorage.getItem(legacyStorageKey));if(s&&Array.isArray(s.actions)){s.version='4.0-migrated';return _fix(s)}}catch(e){}return{version:'4.0',created_at:today,updated_at:today,actions:JSON.parse(JSON.stringify(seed)),thread_notes:{},sosx_date_contract:SOSX_DATE_CONTRACT}}var SAWARO_BACKUP=(function(){
   // Multi-layer local backup. Live file write (Chrome/Edge File System Access API)
   // + silent download fallback (iOS/Safari) + beforeunload safety net.
   var fileHandle=null, supported=('showSaveFilePicker' in window), dirty=false, writing=false;
@@ -10997,7 +11161,7 @@ var SAWARO_EVENT_JOURNAL_CONTRACT='R5_ACTION_EVENT_JOURNAL_V1';
 var __sawaroJournalLastActions=null;
 function sawaroJournalIso(){return new Date().toISOString()}
 function sawaroJournalClone(v){try{return JSON.parse(JSON.stringify(v))}catch(e){return v}}
-function sawaroJournalSnapshot(a){a=a||{};return{action_id:String(a.action_id||''),alert_id:String(a.alert_id||''),source_signal_id:String(a.source_signal_id||''),parent_action_id:String(a.parent_action_id||''),source_action_id:String(a.source_action_id||''),account_id:String(a.account_id||''),account_name:String(a.account_name||''),main_segment:String(a.main_segment||''),title:String(a.title||''),reason:String(a.reason||''),next_step:String(a.next_step||''),owner:String(a.owner||''),priority:String(a.priority||''),status:String(a.status||''),due_date:String(a.due_date||''),original_due_date:String(a.original_due_date||''),capacity_shifted_from:String(a.capacity_shifted_from||''),capacity_shifted_at:String(a.capacity_shifted_at||''),created_at:String(a.created_at||''),last_touch:String(a.last_touch||''),follow_up_date:String(a.follow_up_date||''),commercial_impact_eur:Number(a.commercial_impact_eur||0),risk_type:String(a.risk_type||''),exposure:(window.SAWARO26_R7B?window.SAWARO26_R7B.snapshotExposure(a):(a.exposure||null)),outcome:String(a.outcome||''),outcome_note:String(a.outcome_note||''),progress:Number(a.progress||0),includeInWeekly:a.includeInWeekly!==false}}
+function sawaroJournalSnapshot(a){a=a||{};return{action_id:String(a.action_id||''),alert_id:String(a.alert_id||''),source_signal_id:String(a.source_signal_id||''),parent_action_id:String(a.parent_action_id||''),source_action_id:String(a.source_action_id||''),account_id:String(a.account_id||''),account_name:String(a.account_name||''),main_segment:String(a.main_segment||''),title:String(a.title||''),reason:String(a.reason||''),next_step:String(a.next_step||''),owner:String(a.owner||''),priority:String(a.priority||''),status:String(a.status||''),due_date:String(a.due_date||''),planned_execution_date:String(a.planned_execution_date||''),execution_date_migration_status:String(a.execution_date_migration_status||''),original_due_date:String(a.original_due_date||''),capacity_shifted_from:String(a.capacity_shifted_from||''),capacity_shifted_at:String(a.capacity_shifted_at||''),created_at:String(a.created_at||''),last_touch:String(a.last_touch||''),follow_up_date:String(a.follow_up_date||''),commercial_impact_eur:Number(a.commercial_impact_eur||0),risk_type:String(a.risk_type||''),exposure:(window.SAWARO26_R7B?window.SAWARO26_R7B.snapshotExposure(a):(a.exposure||null)),outcome:String(a.outcome||''),outcome_note:String(a.outcome_note||''),progress:Number(a.progress||0),includeInWeekly:a.includeInWeekly!==false}}
 function sawaroJournalMap(list){var m={};(Array.isArray(list)?list:[]).forEach(function(a){var s=sawaroJournalSnapshot(a);if(s.action_id)m[s.action_id]=s});return m}
 function sawaroJournalNextId(){var seq=Number(state.event_journal_seq||0);if(!seq&&Array.isArray(state.event_journal)){state.event_journal.forEach(function(e){var m=String(e&&e.event_id||'').match(/(\d+)$/);if(m)seq=Math.max(seq,Number(m[1])||0)})}seq++;state.event_journal_seq=seq;return'SOS-EVT-'+String(seq).padStart(8,'0')}
 function sawaroJournalLastFor(actionId){var arr=Array.isArray(state.event_journal)?state.event_journal:[];for(var i=arr.length-1;i>=0;i--){if(String(arr[i].action_id||'')===String(actionId||''))return arr[i].event_id||''}return''}
@@ -11007,27 +11171,66 @@ function sawaroJournalEnsure(){if(!Array.isArray(state.event_journal))state.even
 function sawaroJournalEq(a,b){return JSON.stringify(a)===JSON.stringify(b)}
 function sawaroJournalChange(field,before,after){return{field:field,before:before,after:after}}
 function sawaroJournalStatusType(v){v=String(v||'').toUpperCase();if(v==='DONE')return'COMPLETED';if(v==='CANCELLED')return'CANCELLED';if(v==='WAITING_CUSTOMER'||v==='WAITING_INTERNAL'||v==='BLOCKED')return'WAITING_SET';if(v==='ESCALATED')return'ESCALATED';return'STATUS_CHANGED'}
-function sawaroJournalCapture(reason){sawaroJournalEnsure();var before=__sawaroJournalLastActions||{},after=sawaroJournalMap(state.actions),r=String(reason||'store');Object.keys(after).forEach(function(id){if(before[id])return;var a=after[id],type=r==='state-import'?'IMPORTED_ACTION':(a.parent_action_id||/^Follow-up\s*[·:-]/i.test(a.title))?'FOLLOWUP_CREATED':a.source_signal_id?'RADAR_ACCEPTED':'CREATED';sawaroJournalAppend(type,a,r,[],null,a,{effective_date:a.created_at||today})});Object.keys(before).forEach(function(id){if(after[id])return;var a=before[id];sawaroJournalAppend(r==='state-import'?'IMPORT_REMOVED':'REMOVED',a,r,[],a,null,{note:'Action absent from current master state.'})});Object.keys(after).forEach(function(id){var b=before[id],a=after[id];if(!b)return;if(b.due_date!==a.due_date){var cap=!!a.capacity_shifted_at&&a.capacity_shifted_at===today&&String(a.capacity_shifted_from||'')===String(b.due_date||'');sawaroJournalAppend(cap?'CAPACITY_RESCHEDULED':'RESCHEDULED',a,r,[sawaroJournalChange('due_date',b.due_date,a.due_date)],b,a,{effective_date:a.due_date})}if(b.status!==a.status)sawaroJournalAppend(sawaroJournalStatusType(a.status),a,r,[sawaroJournalChange('status',b.status,a.status)],b,a,{});if(b.outcome!==a.outcome||b.outcome_note!==a.outcome_note){var ot=(!b.outcome&&!b.outcome_note&&(a.outcome||a.outcome_note))?'OUTCOME_RECORDED':(!(a.outcome||a.outcome_note)?'OUTCOME_CLEARED':'OUTCOME_UPDATED');sawaroJournalAppend(ot,a,r,[sawaroJournalChange('outcome',b.outcome,a.outcome),sawaroJournalChange('outcome_note',b.outcome_note,a.outcome_note)],b,a,{})}if(b.follow_up_date!==a.follow_up_date)sawaroJournalAppend(a.follow_up_date?'FOLLOWUP_SCHEDULED':'FOLLOWUP_CLEARED',a,r,[sawaroJournalChange('follow_up_date',b.follow_up_date,a.follow_up_date)],b,a,{effective_date:a.follow_up_date||today});if(b.progress!==a.progress)sawaroJournalAppend('PROGRESS_UPDATED',a,r,[sawaroJournalChange('progress',b.progress,a.progress)],b,a,{});if(b.priority!==a.priority)sawaroJournalAppend('PRIORITY_CHANGED',a,r,[sawaroJournalChange('priority',b.priority,a.priority)],b,a,{});if(b.owner!==a.owner)sawaroJournalAppend('OWNER_CHANGED',a,r,[sawaroJournalChange('owner',b.owner,a.owner)],b,a,{});if(b.commercial_impact_eur!==a.commercial_impact_eur)sawaroJournalAppend('IMPACT_UPDATED',a,r,[sawaroJournalChange('commercial_impact_eur',b.commercial_impact_eur,a.commercial_impact_eur)],b,a,{});if(JSON.stringify(b.exposure||null)!==JSON.stringify(a.exposure||null))sawaroJournalAppend('EXPOSURE_UPDATED',a,r,[sawaroJournalChange('exposure',b.exposure||null,a.exposure||null)],b,a,{});if(b.includeInWeekly!==a.includeInWeekly)sawaroJournalAppend('WEEKLY_VISIBILITY_CHANGED',a,r,[sawaroJournalChange('includeInWeekly',b.includeInWeekly,a.includeInWeekly)],b,a,{});var df=['title','reason','next_step','account_id','account_name','main_segment','risk_type'],dc=[];df.forEach(function(f){if(!sawaroJournalEq(b[f],a[f]))dc.push(sawaroJournalChange(f,b[f],a[f]))});if(dc.length&&r!=='editor-autosave')sawaroJournalAppend('DETAILS_UPDATED',a,r,dc,b,a,{})});__sawaroJournalLastActions=after}
+function sawaroJournalCapture(reason){sawaroJournalEnsure();var before=__sawaroJournalLastActions||{},after=sawaroJournalMap(state.actions),r=String(reason||'store');Object.keys(after).forEach(function(id){if(before[id])return;var a=after[id],type=r==='state-import'?'IMPORTED_ACTION':(a.parent_action_id||/^Follow-up\s*[·:-]/i.test(a.title))?'FOLLOWUP_CREATED':a.source_signal_id?'RADAR_ACCEPTED':'CREATED';sawaroJournalAppend(type,a,r,[],null,a,{effective_date:a.created_at||today})});Object.keys(before).forEach(function(id){if(after[id])return;var a=before[id];sawaroJournalAppend(r==='state-import'?'IMPORT_REMOVED':'REMOVED',a,r,[],a,null,{note:'Action absent from current master state.'})});Object.keys(after).forEach(function(id){var b=before[id],a=after[id];if(!b)return;if(b.due_date!==a.due_date)sawaroJournalAppend('RESCHEDULED',a,r,[sawaroJournalChange('due_date',b.due_date,a.due_date)],b,a,{effective_date:a.due_date});if(b.planned_execution_date!==a.planned_execution_date)sawaroJournalAppend('CAPACITY_RESCHEDULED',a,r,[sawaroJournalChange('planned_execution_date',b.planned_execution_date,a.planned_execution_date)],b,a,{effective_date:a.planned_execution_date||a.due_date});if(b.status!==a.status)sawaroJournalAppend(sawaroJournalStatusType(a.status),a,r,[sawaroJournalChange('status',b.status,a.status)],b,a,{});if(b.outcome!==a.outcome||b.outcome_note!==a.outcome_note){var ot=(!b.outcome&&!b.outcome_note&&(a.outcome||a.outcome_note))?'OUTCOME_RECORDED':(!(a.outcome||a.outcome_note)?'OUTCOME_CLEARED':'OUTCOME_UPDATED');sawaroJournalAppend(ot,a,r,[sawaroJournalChange('outcome',b.outcome,a.outcome),sawaroJournalChange('outcome_note',b.outcome_note,a.outcome_note)],b,a,{})}if(b.follow_up_date!==a.follow_up_date)sawaroJournalAppend(a.follow_up_date?'FOLLOWUP_SCHEDULED':'FOLLOWUP_CLEARED',a,r,[sawaroJournalChange('follow_up_date',b.follow_up_date,a.follow_up_date)],b,a,{effective_date:a.follow_up_date||today});if(b.progress!==a.progress)sawaroJournalAppend('PROGRESS_UPDATED',a,r,[sawaroJournalChange('progress',b.progress,a.progress)],b,a,{});if(b.priority!==a.priority)sawaroJournalAppend('PRIORITY_CHANGED',a,r,[sawaroJournalChange('priority',b.priority,a.priority)],b,a,{});if(b.owner!==a.owner)sawaroJournalAppend('OWNER_CHANGED',a,r,[sawaroJournalChange('owner',b.owner,a.owner)],b,a,{});if(b.commercial_impact_eur!==a.commercial_impact_eur)sawaroJournalAppend('IMPACT_UPDATED',a,r,[sawaroJournalChange('commercial_impact_eur',b.commercial_impact_eur,a.commercial_impact_eur)],b,a,{});if(JSON.stringify(b.exposure||null)!==JSON.stringify(a.exposure||null))sawaroJournalAppend('EXPOSURE_UPDATED',a,r,[sawaroJournalChange('exposure',b.exposure||null,a.exposure||null)],b,a,{});if(b.includeInWeekly!==a.includeInWeekly)sawaroJournalAppend('WEEKLY_VISIBILITY_CHANGED',a,r,[sawaroJournalChange('includeInWeekly',b.includeInWeekly,a.includeInWeekly)],b,a,{});var df=['title','reason','next_step','account_id','account_name','main_segment','risk_type'],dc=[];df.forEach(function(f){if(!sawaroJournalEq(b[f],a[f]))dc.push(sawaroJournalChange(f,b[f],a[f]))});if(dc.length&&r!=='editor-autosave')sawaroJournalAppend('DETAILS_UPDATED',a,r,dc,b,a,{})});__sawaroJournalLastActions=after}
 function sawaroJournalAdoptImportedState(s){s=s&&typeof s==='object'?s:{};var merged=[],seen={};function addAll(arr){(Array.isArray(arr)?arr:[]).forEach(function(e){var id=String(e&&e.event_id||'');if(id&&seen[id])return;if(id)seen[id]=1;merged.push(e)})}addAll(state&&state.event_journal);addAll(s.event_journal);s.event_journal=merged;s.event_journal_contract=SAWARO_EVENT_JOURNAL_CONTRACT;s.event_journal_seq=Math.max(Number(state&&state.event_journal_seq||0),Number(s.event_journal_seq||0));return s}
 function sawaroJournalEvents(actionId){sawaroJournalEnsure();return state.event_journal.filter(function(e){return !actionId||String(e.action_id||'')===String(actionId)}).slice().sort(function(a,b){return String(a.occurred_at||'').localeCompare(String(b.occurred_at||''))||String(a.event_id||'').localeCompare(String(b.event_id||''))})}
 function sawaroJournalRecord(actionId,eventType,note,meta){sawaroJournalEnsure();var a=(state.actions||[]).find(function(x){return String(x.action_id||'')===String(actionId||'')});if(!a)throw new Error('Action not found: '+actionId);var ev=sawaroJournalAppend(eventType||'NOTE_RECORDED',a,'manual-lifecycle-event',[],null,sawaroJournalSnapshot(a),Object.assign({},meta||{},{note:String(note||'')}));store('manual-lifecycle-event');return ev}
 function sawaroJournalAudit(){sawaroJournalEnsure();var ids={},dups=[],unknown=[],actions={};(state.actions||[]).forEach(function(a){actions[a.action_id]=1});state.event_journal.forEach(function(e){if(ids[e.event_id])dups.push(e.event_id);ids[e.event_id]=1;if(e.action_id&&!actions[e.action_id]&&e.event_type!=='REMOVED'&&e.event_type!=='IMPORT_REMOVED')unknown.push(e.event_id)});return{contract:state.event_journal_contract,events:state.event_journal.length,actions:(state.actions||[]).length,duplicate_event_ids:dups,unknown_action_events:unknown,append_only:true,history_before_r5_reconstructed:false}}
 function sawaroJournalExport(){sawaroJournalEnsure();download('SAWARO26_ACTION_EVENT_JOURNAL_'+today.replaceAll('-','')+'.json',JSON.stringify({schema:SAWARO_EVENT_JOURNAL_CONTRACT,exported_at:sawaroJournalIso(),events:state.event_journal},null,2),'application/json')}
 sawaroJournalEnsure();__sawaroJournalLastActions=sawaroJournalMap(state.actions);
-function store(reason){state.updated_at=today;state.storage_contract='R5_SINGLE_MASTER_EVENT_JOURNAL_V1';state.storage_contract_updated_at=today;state.storage_contract_reason=String(reason||'domain-command');try{if(window.STATE)window.STATE.sos=state}catch(e){}try{var _sm=sosxEnsureCriticalCapacity(state.actions);if(_sm){state.sosx_capacity_policy='SOSX_CAP4_MASTER_STATE_INVARIANT_V168';state.sosx_capacity_applied_at=today;}}catch(e){console.warn('SOSX capacity invariant',e)}try{sawaroJournalCapture(reason||'domain-command')}catch(e){console.warn('R5 action journal capture',e)}try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}try{localStorage.setItem(storageKey+'_REDUNDANT',JSON.stringify(state));}catch(e){}try{SAWARO_BACKUP.onChange(state);}catch(e){}}function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}function eur(v){v=Number(v||0);return v?new Intl.NumberFormat('de-AT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v):'—'}function addDays(d,n){let x=new Date(d+'T00:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)}function srIsoWeek(d){var dt=(typeof d==='string')?new Date(d+'T00:00:00'):new Date(d.getFullYear(),d.getMonth(),d.getDate());var day=(dt.getDay()+6)%7;dt.setDate(dt.getDate()-day+3);var firstThu=new Date(dt.getFullYear(),0,4);var firstDay=(firstThu.getDay()+6)%7;firstThu.setDate(firstThu.getDate()-firstDay+3);return 1+Math.round((dt-firstThu)/6048e5);}function activeA(a){return !['DONE','CANCELLED'].includes(a.status)}
+function store(reason){state.updated_at=today;state.storage_contract='R5_SINGLE_MASTER_EVENT_JOURNAL_V1';state.storage_contract_updated_at=today;state.storage_contract_reason=String(reason||'domain-command');state.sosx_date_contract=SOSX_DATE_CONTRACT;try{if(window.STATE)window.STATE.sos=state}catch(e){}try{sosxMigrateExecutionDates(state.actions);var _sm=sosxEnsureCriticalCapacity(state.actions),_hm=sosxEnsureHighWorkdayDistribution(state.actions);if(_sm||_hm){state.sosx_capacity_policy='SOSX_CAP4_PLUS_HIGH_WORKDAY_BALANCE_V180_8_4';state.sosx_capacity_applied_at=today;state.sosx_high_workday_policy='SOFT_BALANCE_5_WORKDAYS';state.sosx_high_workday_applied_at=today;}}catch(e){console.warn('SOSX execution planning invariant',e)}try{sawaroJournalCapture(reason||'domain-command')}catch(e){console.warn('R5 action journal capture',e)}try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}try{localStorage.setItem(storageKey+'_REDUNDANT',JSON.stringify(state));}catch(e){}try{SAWARO_BACKUP.onChange(state);}catch(e){}}function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}function eur(v){v=Number(v||0);return v?new Intl.NumberFormat('de-AT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v):'—'}/* R8.2.8.3 LOCAL-DATE CONTRACT: date-only values must never round-trip through UTC. */function sosxLocalDateISO(d){if(!(d instanceof Date)||isNaN(d))return'';return d.getFullYear()+'-'+_pad(d.getMonth()+1)+'-'+_pad(d.getDate())}function addDays(d,n){let x=new Date(String(d||today)+'T00:00:00');x.setDate(x.getDate()+Number(n||0));return sosxLocalDateISO(x)}function srIsoWeek(d){var dt=(typeof d==='string')?new Date(d+'T00:00:00'):new Date(d.getFullYear(),d.getMonth(),d.getDate());var day=(dt.getDay()+6)%7;dt.setDate(dt.getDate()-day+3);var firstThu=new Date(dt.getFullYear(),0,4);var firstDay=(firstThu.getDay()+6)%7;firstThu.setDate(firstThu.getDate()-firstDay+3);return 1+Math.round((dt-firstThu)/6048e5);}function activeA(a){return !['DONE','CANCELLED'].includes(a.status)}
 const SOSX_CRIT_LIMIT=4;
 function sosxNormPriority(v){var raw=String(v==null?'':v).trim();var p=raw.toUpperCase().replace(/[\s_-]+/g,'');if(['KRITISCH','CRITICAL','CRIT','RED','P1','PRIO1','PRIORITY1'].includes(p))return'KRITISCH';if(['HOCH','HIGH','P2','PRIO2','PRIORITY2'].includes(p))return'HOCH';if(['MITTEL','MEDIUM','MID','P3','PRIO3','PRIORITY3'].includes(p))return'MITTEL';if(['NIEDRIG','LOW','P4','PRIO4','PRIORITY4'].includes(p))return'NIEDRIG';return raw||'MITTEL'}
 function sosxIsCritical(a){if(!a)return false;var raw=String(a.priority==null?'':a.priority).trim();if(sosxNormPriority(raw)==='KRITISCH')return true;var t=(String(a.title||'')+' '+String(a.risk_type||'')).toUpperCase();return !raw&&!!(a.source_signal_id||a.alert_id)&&/(CRITICAL TARGET GAP|STRUCTURAL BREAK|KRITISCH|CRITICAL)/.test(t)}
+function sosxBusinessDate(a){return String((a&&a.due_date)||'').slice(0,10)}
+function sosxExecutionDate(a){return String((a&&(a.planned_execution_date||a.due_date))||today).slice(0,10)}
+function sosxMigrateExecutionDate(a){
+  if(!a)return 0;
+  var planned=String(a.planned_execution_date||'').slice(0,10);
+  if(planned){if(!a.execution_date_migration_status)a.execution_date_migration_status='ALREADY_MIGRATED';return 0;}
+  var due=String(a.due_date||'').slice(0,10),orig=String(a.original_due_date||'').slice(0,10),hasCap=!!(a.capacity_shifted_at||a.capacity_shifted_from);
+  if(!due){a.planned_execution_date='';a.execution_date_migration_status='REVIEW_REQUIRED';return 1;}
+  if(orig&&hasCap){a.due_date=orig;a.planned_execution_date=due;a.execution_date_migration_status='LEGACY_CAP4_RECONSTRUCTED';return 1;}
+  a.planned_execution_date=due;a.execution_date_migration_status=orig?'REVIEW_REQUIRED':'DIRECT';return 1;
+}
+function sosxMigrateExecutionDates(list){var n=0;(Array.isArray(list)?list:[]).forEach(function(a){n+=sosxMigrateExecutionDate(a)});return n}
 function sosxWorkday(ds){var g=dateObj(ds).getDay();return g!==0&&g!==6}
 function sosxNextWorkday(ds){var d=ds||today,g=0;do{d=addDays(d,1)}while(g++<370&&!sosxWorkday(d));return d}
+/* R8.2.8.4 HIGH WORKDAY DISTRIBUTION: HOCH is soft-balanced over workdays; KRITISCH keeps hard CAP4. */
+const SOSX_HIGH_WINDOW_WORKDAYS=5;
+function sosxIsHigh(a){return !!a&&sosxNormPriority(a.priority)==='HOCH'}
+function sosxHighCandidateDays(due){
+  due=String(due||today).slice(0,10);var days=[],d=today,g=0;
+  if(due>=today){while(d<=due&&g++<370){if(sosxWorkday(d))days.push(d);d=addDays(d,1)}if(days.length>SOSX_HIGH_WINDOW_WORKDAYS)days=days.slice(-SOSX_HIGH_WINDOW_WORKDAYS);d=addDays(due,1)}
+  else{d=today;}
+  g=0;while(days.length<SOSX_HIGH_WINDOW_WORKDAYS&&g++<370){if(sosxWorkday(d)&&days.indexOf(d)<0)days.push(d);d=addDays(d,1)}
+  return days;
+}
+function sosxHighBaseLoad(list){var by={};(Array.isArray(list)?list:[]).forEach(function(a){if(!a||!activeA(a)||sosxIsHigh(a))return;var d=sosxExecutionDate(a);by[d]=(by[d]||0)+1});return by}
+function sosxFindHighWorkdaySlot(due,excludeId,list){var arr=Array.isArray(list)?list:state.actions,days=sosxHighCandidateDays(due),load=sosxHighBaseLoad(arr);arr.forEach(function(a){if(!a||a.action_id===excludeId||!activeA(a)||!sosxIsHigh(a))return;var d=sosxExecutionDate(a);load[d]=(load[d]||0)+1});if(!days.length)return due||today;days.sort(function(a,b){return (load[a]||0)-(load[b]||0)||a.localeCompare(b)});return days[0]}
+function sosxEnsureHighWorkdayDistribution(list){
+  if(!Array.isArray(list))return 0;sosxMigrateExecutionDates(list);
+  var highs=list.filter(function(a){return a&&activeA(a)&&sosxIsHigh(a)}).sort(function(a,b){return String(a.due_date||'').localeCompare(String(b.due_date||''))||Number(b.commercial_impact_eur||0)-Number(a.commercial_impact_eur||0)||String(a.created_at||'').localeCompare(String(b.created_at||''))||String(a.action_id||'').localeCompare(String(b.action_id||''))});
+  var load=sosxHighBaseLoad(list),moved=0;
+  highs.forEach(function(a){var days=sosxHighCandidateDays(a.due_date||sosxExecutionDate(a));if(!days.length)return;days.sort(function(x,y){return (load[x]||0)-(load[y]||0)||x.localeCompare(y)});var nd=days[0],old=sosxExecutionDate(a);load[nd]=(load[nd]||0)+1;if(old!==nd){a.high_planning_shifted_from=old;a.high_planning_shifted_at=today;a.execution_planning_reason='HIGH_WORKDAY_BALANCE';a.planned_execution_date=nd;if(a.follow_up_date&&a.follow_up_date<nd)a.follow_up_date=addDays(nd,3);moved++}});
+  return moved;
+}
+function sosxHighWeekendViolations(list){return (Array.isArray(list)?list:[]).filter(function(a){return a&&activeA(a)&&sosxIsHigh(a)&&!sosxWorkday(sosxExecutionDate(a))})}
+
 function sosxCriticalStrength(a){var t=String((a&&a.title)||'')+' '+String((a&&a.risk_type)||'');var s=Number((a&&a.commercial_impact_eur)||0);if(/structural break|critical target gap/i.test(t))s+=1e12;if(/highrunner/i.test(t))s+=5e11;if(/strategic|defend/i.test(t))s+=2e11;return s}
-function sosxCriticalCounts(list){var by={};(Array.isArray(list)?list:[]).forEach(function(a){if(a&&activeA(a)&&sosxIsCritical(a)){var d=a.due_date||today;by[d]=(by[d]||0)+1}});return by}
+function sosxCriticalCounts(list){var by={};(Array.isArray(list)?list:[]).forEach(function(a){if(a&&activeA(a)&&sosxIsCritical(a)){var d=sosxExecutionDate(a);by[d]=(by[d]||0)+1}});return by}
 function sosxHasCriticalOverflow(list){var by=sosxCriticalCounts(list);return Object.keys(by).some(function(d){return by[d]>SOSX_CRIT_LIMIT||!sosxWorkday(d)})}
-function sosxFindCriticalSlot(due,excludeId,list){var arr=Array.isArray(list)?list:state.actions;var d=due||today,g=0;while(g++<370){if(sosxWorkday(d)){var n=arr.filter(function(x){return x&&x.action_id!==excludeId&&activeA(x)&&sosxIsCritical(x)&&x.due_date===d}).length;if(n<SOSX_CRIT_LIMIT)return d}d=addDays(d,1)}return due||today}
-function sosxEnsureCriticalCapacity(list){if(!Array.isArray(list))return 0;var normalized=0;list.forEach(function(a){if(!a)return;var p=sosxNormPriority(a.priority);if(a.priority!==p){a.priority=p;normalized++}});var crit=list.filter(function(a){return a&&activeA(a)&&sosxIsCritical(a)}).sort(function(a,b){return String(a.due_date||today).localeCompare(String(b.due_date||today))||sosxCriticalStrength(b)-sosxCriticalStrength(a)||String(a.created_at||'').localeCompare(String(b.created_at||''))||String(a.action_id||'').localeCompare(String(b.action_id||''))});var counts={},moved=0;crit.forEach(function(a){var d=a.due_date||today,g=0;while(g++<370){if(sosxWorkday(d)&&(counts[d]||0)<SOSX_CRIT_LIMIT)break;d=addDays(d,1)}counts[d]=(counts[d]||0)+1;if(a.due_date!==d){if(!a.original_due_date)a.original_due_date=a.due_date||d;a.capacity_shifted_from=a.due_date||d;a.capacity_shifted_at=today;a.due_date=d;if(a.follow_up_date&&a.follow_up_date<d)a.follow_up_date=addDays(d,3);moved++}});return moved}
-function sosxEnforceCriticalCapacity(){var needs=sosxHasCriticalOverflow(state.actions);var normalized=0;state.actions.forEach(function(a){if(!a)return;var p=sosxNormPriority(a.priority);if(a.priority!==p){a.priority=p;normalized++}});var moved=needs?sosxEnsureCriticalCapacity(state.actions):0;if(normalized||moved){state.sosx_capacity_policy='SOSX_CAP4_MASTER_STATE_INVARIANT_V168';state.sosx_capacity_applied_at=today;store()}return moved}
+function sosxFindCriticalSlot(due,excludeId,list){var arr=Array.isArray(list)?list:state.actions;var d=due||today,g=0;while(g++<370){if(sosxWorkday(d)){var n=arr.filter(function(x){return x&&x.action_id!==excludeId&&activeA(x)&&sosxIsCritical(x)&&sosxExecutionDate(x)===d}).length;if(n<SOSX_CRIT_LIMIT)return d}d=addDays(d,1)}return due||today}
+function sosxEnsureCriticalCapacity(list){if(!Array.isArray(list))return 0;sosxMigrateExecutionDates(list);var normalized=0;list.forEach(function(a){if(!a)return;var p=sosxNormPriority(a.priority);if(a.priority!==p){a.priority=p;normalized++}});var crit=list.filter(function(a){return a&&activeA(a)&&sosxIsCritical(a)}).sort(function(a,b){return sosxExecutionDate(a).localeCompare(sosxExecutionDate(b))||sosxCriticalStrength(b)-sosxCriticalStrength(a)||String(a.due_date||'').localeCompare(String(b.due_date||''))||String(a.created_at||'').localeCompare(String(b.created_at||''))||String(a.action_id||'').localeCompare(String(b.action_id||''))});var counts={},moved=0;crit.forEach(function(a){var oldPlan=sosxExecutionDate(a),d=oldPlan,g=0;while(g++<370){if(sosxWorkday(d)&&(counts[d]||0)<SOSX_CRIT_LIMIT)break;d=addDays(d,1)}counts[d]=(counts[d]||0)+1;if(oldPlan!==d){if(!a.original_due_date)a.original_due_date=a.due_date||'';a.capacity_shifted_from=oldPlan;a.capacity_shifted_at=today;a.planned_execution_date=d;a.execution_date_migration_status=a.execution_date_migration_status||'DIRECT';if(a.follow_up_date&&a.follow_up_date<d)a.follow_up_date=addDays(d,3);moved++}});return moved}
+function sosxEnforceCriticalCapacity(){var migrated=sosxMigrateExecutionDates(state.actions),needs=sosxHasCriticalOverflow(state.actions),normalized=0;state.actions.forEach(function(a){if(!a)return;var p=sosxNormPriority(a.priority);if(a.priority!==p){a.priority=p;normalized++}});var criticalMoved=needs?sosxEnsureCriticalCapacity(state.actions):0;var highMoved=sosxEnsureHighWorkdayDistribution(state.actions);var moved=criticalMoved+highMoved;if(migrated||normalized||moved){state.sosx_capacity_policy='SOSX_CAP4_PLUS_HIGH_WORKDAY_BALANCE_V180_8_4';state.sosx_date_contract=SOSX_DATE_CONTRACT;state.sosx_capacity_applied_at=today;state.sosx_high_workday_policy='SOFT_BALANCE_5_WORKDAYS';state.sosx_high_workday_applied_at=today;store('execution-planning-contract')}return moved}
 try{sosxEnforceCriticalCapacity()}catch(e){console.warn('SOSX initial capacity invariant',e)}
-function dueWeek(a){return activeA(a)&&a.due_date>=today&&a.due_date<=addDays(today,7)}function late(a){return activeA(a)&&a.due_date<today}function cls(a){return a.risk_type==='Low-Hanging Fruit'?'lowfruit':sosxIsCritical(a)?'critical':sosxNormPriority(a.priority)==='HOCH'?'high':''}function sortA(a,b){const p={KRITISCH:0,HOCH:1,MITTEL:2,NIEDRIG:3};return (p[a.priority]-p[b.priority])||String(a.due_date).localeCompare(b.due_date)||a.account_name.localeCompare(b.account_name)}function nextId(){let m=0;state.actions.forEach(a=>{const r=String(a.action_id).match(/(\d+)$/);if(r)m=Math.max(m,+r[1])});return'SOS-ACT-'+String(m+1).padStart(6,'0')}function iconNav(){$('sosx-railNav').innerHTML=$('sosx-bottomNav').innerHTML=$('sosx-quickTabs').innerHTML='';nav.forEach(([id,label,icon])=>{let b=document.createElement('button');b.dataset.screen=id;var _r=(window.SAWARO_NAV_ICON&&window.SAWARO_NAV_ICON[id]);var _u=(_r&&window.SAWARO_ICONS&&window.SAWARO_ICONS[_r]);var _ic=_u?('<span class="swicon" style="background-image:url('+_u+')"></span>'):icon;b.innerHTML=_ic+'<span>'+label+'</span>';b.onclick=()=>showScreen(id);$('sosx-railNav').appendChild(b);let n=b.cloneNode(true);n.onclick=()=>showScreen(id);$('sosx-bottomNav').appendChild(n);if(['dashboard','sos','calendar','inbox','radar','report'].includes(id)){let q=document.createElement('button');q.dataset.screen=id;q.textContent=label;q.onclick=()=>showScreen(id);$('sosx-quickTabs').appendChild(q)}})}function hydrateIcons(root){
+function dueWeek(a){return activeA(a)&&a.due_date>=today&&a.due_date<=addDays(today,7)}function late(a){return activeA(a)&&a.due_date<today}
+function sosxIsChanceSignal(a){return !!(a&&String(a.risk_type||'').trim()==='Low-Hanging Fruit')}
+function sosxVisualClass(a){var p=sosxNormPriority(a&&a.priority);if(p==='KRITISCH')return'critical';if(p==='HOCH')return'high';if(sosxIsChanceSignal(a))return'chance';if(p==='MITTEL')return'medium';return'low'}
+function sosxSignalLabel(a){var v=String((a&&a.risk_type)||'').trim();return v||'Signal'}
+function sosxSignalChip(a){var chance=sosxIsChanceSignal(a),tone=chance?'chance':'neutral',label=(chance?'CHANCE · ':'')+sosxSignalLabel(a);return '<span class="signal-chip '+tone+'">'+esc(label)+'</span>'}
+function sosxCalendarTask(a){var p=sosxNormPriority(a&&a.priority),chance=sosxIsChanceSignal(a)&&p!=='KRITISCH'&&p!=='HOCH',mark=chance?'C':({KRITISCH:'K',HOCH:'H',MITTEL:'M',NIEDRIG:'N'}[p]||'M'),label=chance?'CHANCE · '+sosxSignalLabel(a):sosxSignalLabel(a),tone=sosxVisualClass(a),tip=(chance?'CHANCE':p)+' · '+label+' · '+String(a&&a.account_name||'Account');return '<span class="cal-task '+tone+'" title="'+esc(tip)+'"><span class="cal-task-head"><b class="cal-prio-mini">'+esc(mark)+'</b><span>'+esc(a&&a.account_name||'Account')+'</span></span><small class="cal-reason">'+esc(label)+'</small></span>'}
+function cls(a){return sosxVisualClass(a)}function sortA(a,b){const p={KRITISCH:0,HOCH:1,MITTEL:2,NIEDRIG:3};return (p[a.priority]-p[b.priority])||String(a.due_date).localeCompare(b.due_date)||a.account_name.localeCompare(b.account_name)}function nextId(){let m=0;state.actions.forEach(a=>{const r=String(a.action_id).match(/(\d+)$/);if(r)m=Math.max(m,+r[1])});return'SOS-ACT-'+String(m+1).padStart(6,'0')}function iconNav(){$('sosx-railNav').innerHTML=$('sosx-bottomNav').innerHTML=$('sosx-quickTabs').innerHTML='';nav.forEach(([id,label,icon])=>{let b=document.createElement('button');b.dataset.screen=id;var _r=(window.SAWARO_NAV_ICON&&window.SAWARO_NAV_ICON[id]);var _u=(_r&&window.SAWARO_ICONS&&window.SAWARO_ICONS[_r]);var _ic=_u?('<span class="swicon" style="background-image:url('+_u+')"></span>'):icon;b.innerHTML=_ic+'<span>'+label+'</span>';b.onclick=()=>showScreen(id);$('sosx-railNav').appendChild(b);let n=b.cloneNode(true);n.onclick=()=>showScreen(id);$('sosx-bottomNav').appendChild(n);if(['dashboard','sos','calendar','inbox','radar','report'].includes(id)){let q=document.createElement('button');q.dataset.screen=id;q.textContent=label;q.onclick=()=>showScreen(id);$('sosx-quickTabs').appendChild(q)}})}function hydrateIcons(root){
   try{
     var map=(typeof window!=='undefined'&&window.SAWARO_BTN_ICONS)||{};
     var scope=root||document;
@@ -11037,7 +11240,7 @@ function dueWeek(a){return activeA(a)&&a.due_date>=today&&a.due_date<=addDays(to
   }catch(e){}
 }
 function renderActiveScreen(id){renderKPIs();radarSignals=buildLiveSignals();if(id==='dashboard')renderDashboard();else if(id==='sos')renderSOS();else if(id==='calendar')renderCalendar();else if(id==='inbox')renderInbox();else if(id==='action')renderActionDetail();else if(id==='account')renderAccount();else if(id==='radar'){try{fillSOSRadar()}catch(e){}}else if(id==='report')renderReport();renderWhere()}
-function showScreen(id){active=id;var root=$('sosx-overlay')||document;hydrateIcons(root);root.querySelectorAll('.screen').forEach(function(el){el.classList.toggle('active',el.id==='sosx-screen-'+id)});root.querySelectorAll('[data-screen]').forEach(function(b){b.classList.toggle('active',b.dataset.screen===id)});renderActiveScreen(id)}function chip(p){var _m={KRITISCH:'siren',HOCH:'warn-target',MITTEL:'warn-badge'};var _r=_m[p];var _u=(_r&&window.SAWARO_ICONS&&window.SAWARO_ICONS[_r]);var _ic=_u?('<span class="sw-badge-ico" style="background-image:url('+_u+')"></span>'):'';return '<span class="chip '+(p==='KRITISCH'?'red':p==='HOCH'?'amber':p==='MITTEL'?'blue':'')+'">'+_ic+esc(p)+'</span>'}// v170 Salesforce Task handoff. The existing action remains the master; Salesforce receives a human-readable task draft.
+function showScreen(id){active=id;var root=$('sosx-overlay')||document;hydrateIcons(root);root.querySelectorAll('.screen').forEach(function(el){el.classList.toggle('active',el.id==='sosx-screen-'+id)});root.querySelectorAll('[data-screen]').forEach(function(b){b.classList.toggle('active',b.dataset.screen===id)});renderActiveScreen(id)}function chip(p){p=sosxNormPriority(p);var _m={KRITISCH:'siren',HOCH:'warn-target',MITTEL:'warn-badge'};var _r=_m[p];var _u=(_r&&window.SAWARO_ICONS&&window.SAWARO_ICONS[_r]);var _ic=_u?('<span class="sw-badge-ico" style="background-image:url('+_u+')"></span>'):'';var _c=p==='KRITISCH'?'red':p==='HOCH'?'amber':p==='MITTEL'?'neutral':'muted';return '<span class="chip '+_c+'">'+_ic+esc(p)+'</span>'}// v170 Salesforce Task handoff. The existing action remains the master; Salesforce receives a human-readable task draft.
 const SOSX_SF_TASK_HOST='https://tenneco-crm.lightning.force.com';
 function sfTaskText(v){return String(v==null?'':v).trim()}
 function sfTaskDefaultFields(fields){return Object.keys(fields).filter(function(k){return fields[k]!==''&&fields[k]!=null}).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(String(fields[k]))}).join(',')}
@@ -11125,41 +11328,23 @@ function sfEventUrl(a){return sfTaskUrl(a)}
 function actionCard(a,compact=false,source=''){
   source=(typeof source==='string')?source:'';
   var _AL=window.SAWARO_ALERTS||{},_IC=window.SAWARO_ICONS||{};
-  var _isStruct=String(a.risk_type||"").toUpperCase().indexOf("STRATEGIC")>=0||String(a.title||"").toUpperCase().indexOf("STRUCTURAL")>=0||String(a.title||"").toUpperCase().indexOf("DROP")>=0;
-  var _pic="";
-  if(_isStruct&&_AL.skull){
-    _pic='<span class="sw-alert-ico" title="Structural Break / Drop" style="background-image:url('+_AL.skull+')"></span>';
-  }else if(a.priority==="KRITISCH"&&_AL.siren){
-    _pic='<span class="sw-alert-ico" title="KRITISCH" style="background-image:url('+_AL.siren+')"></span>';
-  }else{
-    var _sr=(window.SAWARO_ACTION_STATE_ICON?window.SAWARO_ACTION_STATE_ICON(a):"calendar"),_su=(_sr&&_IC[_sr]);
-    _pic=_su?('<span class="sw-badge-ico" title="'+esc(a.status||"")+'" style="background-image:url('+_su+')"></span>'):"";
-  }
-  var _outcome=String(a.outcome||'').trim();
-  var _outcomeNote=String(a.outcome_note||'').trim();
+  var _isStruct=String(a.risk_type||'').toUpperCase().indexOf('STRATEGIC')>=0||String(a.title||'').toUpperCase().indexOf('STRUCTURAL')>=0||String(a.title||'').toUpperCase().indexOf('DROP')>=0;
+  var _pic='';
+  if(_isStruct&&_AL.skull){_pic='<span class="sw-alert-ico" title="Structural Break / Drop" style="background-image:url('+_AL.skull+')"></span>';}
+  else if(a.priority==='KRITISCH'&&_AL.siren){_pic='<span class="sw-alert-ico" title="KRITISCH" style="background-image:url('+_AL.siren+')"></span>';}
+  else{var _sr=(window.SAWARO_ACTION_STATE_ICON?window.SAWARO_ACTION_STATE_ICON(a):'calendar'),_su=(_sr&&_IC[_sr]);_pic=_su?('<span class="sw-badge-ico" title="'+esc(a.status||'')+'" style="background-image:url('+_su+')"></span>'):'';}
+  var _outcome=String(a.outcome||'').trim(),_outcomeNote=String(a.outcome_note||'').trim();
   var _tone=/LOST|NO_RESPONSE|CANCELLED/i.test(_outcome)?'loss':(_outcome==='WON'?'won':(_outcome?'active':'empty'));
-  var _outcomeLabel=_outcome||'NO OUTCOME';
-  var _outcomeText=_outcomeNote||'Noch kein Outcome dokumentiert.';
+  var _outcomeLabel=_outcome||'NO OUTCOME',_outcomeText=_outcomeNote||'Noch kein Outcome dokumentiert.';
+  var _due=sosxBusinessDate(a)||'—',_plan=sosxExecutionDate(a)||_due,_dateMeta=(_due!==_plan)?('Fällig '+_due+' · Geplant '+_plan):('Fällig/geplant '+_due);
   return `<div class="action ${cls(a)} ${_outcome?'has-outcome':'no-outcome'}">
-    <div class="action-head">
-      <div class="action-main">
-        <div class="action-account">${_pic}<span>${esc(a.account_name||'Account')}</span></div>
-        <div class="action-title">${esc(a.title||'Untitled Action')}</div>
-        <div class="meta">${esc(a.main_segment)} · Due ${esc(a.due_date||'—')} · ${esc(a.status)} · ${eur(a.commercial_impact_eur)}</div>
-      </div>
-      <div class="progress" style="--p:${Number(a.progress||0)}"><b>${Number(a.progress||0)}%</b></div>
-    </div>
-    <div class="action-outcome-note ${_tone}">
-      <div class="action-outcome-head"><span>Outcome Note</span><b>${esc(_outcomeLabel)}</b></div>
-      <div class="action-outcome-text ${_outcomeNote?'':'placeholder'}">${esc(_outcomeText)}</div>
-    </div>
-    <div class="buttons">
-      <button class="tiny primary" onclick="SOSX.selectAction('${a.action_id}','${source}')">Öffnen</button>
-      <button class="tiny" onclick="SOSX.openEditor('${a.action_id}')">Bearbeiten</button>
-      <button class="tiny amber" onclick="SOSX.createFollowUp('${a.action_id}')">Follow-up</button>
-    </div>
+    <div class="action-head"><div class="action-main"><div class="action-account">${_pic}<span>${esc(a.account_name||'Account')}</span></div><div class="action-title">${esc(a.title||'Untitled Action')}</div><div class="signal-badges">${chip(a.priority)}${sosxSignalChip(a)}</div><div class="meta">${esc(a.main_segment)} · ${esc(_dateMeta)} · ${esc(a.status)} · ${eur(a.commercial_impact_eur)}</div></div><div class="progress" style="--p:${Number(a.progress||0)}"><b>${Number(a.progress||0)}%</b></div></div>
+    <div class="action-outcome-note ${_tone}"><div class="action-outcome-head"><span>Outcome Note</span><b>${esc(_outcomeLabel)}</b></div><div class="action-outcome-text ${_outcomeNote?'':'placeholder'}">${esc(_outcomeText)}</div></div>
+    <div class="buttons"><button class="tiny primary" onclick="SOSX.selectAction('${a.action_id}','${source}')">Öffnen</button><button class="tiny" onclick="SOSX.openEditor('${a.action_id}')">Bearbeiten</button><button class="tiny amber" onclick="SOSX.createFollowUp('${a.action_id}')">Follow-up</button></div>
   </div>`;
-}function selectAction(id,source){selectedActionId=id;selectedActionSource=(typeof source==='string'&&source)?source:active;showScreen('action')}function fillSOSRadar(){
+}function selectAction(id,source){selectedActionId=id;selectedActionSource=(typeof source==='string'&&source)?source:active;showScreen('action')}
+function openSignalAction(id){var a=state.actions.find(function(x){return x.action_id===id});if(!a){toast('Action nicht gefunden.','warn');return}selectAction(id,'inbox')}
+function showSignalInCalendar(id){var a=state.actions.find(function(x){return x.action_id===id});if(!a){toast('Action nicht gefunden.','warn');return}selectedActionId=id;selectedDate=sosxExecutionDate(a)||today;calendarCursor=selectedDate;showScreen('calendar');toast('Kalender · '+selectedDate)}function fillSOSRadar(){
   var poly=document.getElementById('sosx-radarPoly'); if(!poly) return;
   var acts=(state.actions||[]);
   var open=acts.filter(function(a){return ['DONE','CANCELLED'].indexOf(a.status)<0;});
@@ -11190,14 +11375,43 @@ function renderAll(updateDetail=true){radarSignals=buildLiveSignals();renderKPIs
 function labelFor(id){const map={dashboard:['Commander Dashboard','Home · Tagesbild · Top Execution Focus'],sos:['SOS Action Board','SOS · Prioritäten · Weekly Board'],calendar:['SOS Kalender','Kalender · Agenda · nächste 7 Tage'],inbox:['Action Proposal Intake','Radar-Signale · Vorschläge · Übernahme'],action:['Action Detail','Detail · Update · Outcome'],account:['Account Thread','Kunde · Maßnahmenhistorie · Pulse'],radar:['Sales Risk & Development Radar','Risk · Evidence · Next Best Action'],report:['Reports','Weekly · Monthly · Export']};return map[id]||[id,''];}
 function renderWhere(){if(!$('sosx-whereTitle')||!$('sosx-whereTrail'))return;const [t,s]=labelFor(active);$('sosx-whereTitle').textContent=t;$('sosx-whereTrail').textContent=s;}
 function dateObj(d){return new Date(String(d||today)+'T00:00:00')}
-function iso(d){return d.toISOString().slice(0,10)}
+function iso(d){return sosxLocalDateISO(d)}
 function sameMonth(a,b){return dateObj(a).getMonth()===dateObj(b).getMonth()&&dateObj(a).getFullYear()===dateObj(b).getFullYear()}
 function dayLabel(d){return dateObj(d).toLocaleDateString('de-AT',{weekday:'short',day:'2-digit',month:'2-digit'})}
 function monthLabel(d){return dateObj(d).toLocaleDateString('de-AT',{month:'long',year:'numeric'})}
-function tasksOn(d){return state.actions.filter(a=>a.due_date===d).sort(sortA)}
+function tasksOn(d){return state.actions.filter(a=>sosxExecutionDate(a)===d).sort(sortA)}
 function moveCalendar(delta){let d=dateObj(calendarCursor);d.setMonth(d.getMonth()+delta);calendarCursor=iso(d);selectedDate=iso(new Date(d.getFullYear(),d.getMonth(),Math.min(dateObj(selectedDate).getDate(),28)));renderCalendar();renderWhere()}
-function selectCalendarDate(d){selectedDate=d;calendarCursor=d;renderCalendar();renderWhere()}function renderCalendar(){if(!$('sosx-calendarGrid'))return;var _capMoved=sosxEnforceCriticalCapacity();const open=state.actions.filter(activeA),done=state.actions.filter(a=>a.status==='DONE');$('sosx-calWeek').textContent=open.filter(a=>a.due_date>=today&&a.due_date<=addDays(today,7)).length;$('sosx-calLate').textContent=open.filter(late).length;$('sosx-calSelected').textContent=tasksOn(selectedDate).length;$('sosx-calDone').textContent=done.length;$('sosx-calendarMonth').textContent=monthLabel(calendarCursor);$('sosx-calendarSummary').textContent='Due-Date-Ansicht · '+open.length+' aktive Tasks im Action-State';const wds=['Mo','Di','Mi','Do','Fr','Sa','So'];$('sosx-calendarWeekdays').innerHTML=`<div class="cal-weekday cal-kw-head">KW</div>`+wds.map(w=>`<div class="cal-weekday">${w}</div>`).join('');let cur=dateObj(calendarCursor),first=new Date(cur.getFullYear(),cur.getMonth(),1),start=new Date(first);let offset=(first.getDay()+6)%7;start.setDate(first.getDate()-offset);let html='';for(let i=0;i<42;i++){let d=new Date(start);d.setDate(start.getDate()+i);if(i%7===0){html+=`<div class="cal-kw">${srIsoWeek(d)}</div>`;}let ds=iso(d),arr=tasksOn(ds),cls='cal-day'+(sameMonth(ds,calendarCursor)?'':' out')+(ds===today?' today':'')+(ds===selectedDate?' selected':'');html+=`<button class="${cls}" onclick="SOSX.selectCalendarDate('${ds}')"><span class="cal-num">${d.getDate()}${arr.length?`<i class="cal-badge">${arr.length}</i>`:''}</span>${arr.slice(0,3).map(a=>`<span class="cal-task ${a.priority==='KRITISCH'?'critical':a.priority==='HOCH'?'high':''}">${esc(a.account_name)}</span>`).join('')}</button>`}$('sosx-calendarGrid').innerHTML=html;$('sosx-selectedDateTitle').textContent='Agenda · '+dayLabel(selectedDate);let dayTasks=tasksOn(selectedDate);$('sosx-selectedDateMeta').textContent=dayTasks.length+' Task'+(dayTasks.length===1?'':'s');$('sosx-calendarAgenda').innerHTML=dayTasks.map(function(a){return actionCard(a,false,'calendar')}).join('')||empty('Keine Tasks an diesem Tag.');let upcoming=open.filter(a=>a.due_date>=today&&a.due_date<=addDays(today,7)).sort(sortA);$('sosx-calendarUpcoming').innerHTML=upcoming.map(function(a){return actionCard(a,false,'calendar')}).join('')||empty('Keine aktiven Tasks in den nächsten 7 Tagen.');let jump=[];for(let i=0;i<7;i++){let ds=addDays(today,i),arr=tasksOn(ds);jump.push(`<button class="date-pill ${ds===selectedDate?'active':''}" onclick="SOSX.selectCalendarDate('${ds}')"><span>${dateObj(ds).toLocaleDateString('de-AT',{weekday:'short'})}</span><b>${dateObj(ds).getDate()}</b><span>${arr.length} Task</span></button>`)}$('sosx-dateJump').innerHTML=jump.join('');var _kw=$('sosx-currentKW');if(_kw)_kw.textContent='KW '+srIsoWeek(today);}
-function renderInbox(){let imported=new Set(state.actions.map(a=>a.source_signal_id).filter(Boolean));let open=radarSignals.filter(s=>!imported.has(s.signal_id));$('sosx-openSignalCount').textContent=open.length;$('sosx-proposalList').innerHTML=radarSignals.map(s=>{let done=imported.has(s.signal_id);return `<div class="proposal ${s.priority==='KRITISCH'?'critical':s.priority==='HOCH'?'high':''}"><div class="action-head"><div><h3>${esc(s.account_name)}</h3><div class="title">${esc(s.title)}</div><div class="meta">${esc(s.reason)}</div></div>${chip(s.priority)}</div><div class="signal-grid"><div><small>Risk signal</small><b>${s.priority==='KRITISCH'?'HIGH':'MEDIUM'}</b></div><div><small>Type</small><b>${esc(s.risk_type)}</b></div><div><small>FY26 Visibility</small><b>${s.visibility}</b></div></div><div class="note"><b>Empfohlene Aktion:</b> ${esc(s.next_step)}</div><div class="buttons"><span class="chip ${done?'lime':'amber'}">${done?'Übernommen':'Offen'}</span><button class="tiny primary" ${done?'disabled':''} onclick="SOSX.convertSignal('${s.signal_id}')">In SOS + Kalender übernehmen</button><button class="tiny" onclick="SOSX.editSignal('${s.signal_id}')">Anpassen</button></div></div>`}).join('')}function renderActionDetail(){let a=state.actions.find(x=>x.action_id===selectedActionId)||state.actions.find(activeA)||state.actions[0];if(!a)return;selectedActionId=a.action_id;$('sosx-quickOutcome').value=a.outcome||'ADVANCED';$('sosx-quickOutcomeNote').value=a.outcome_note||'';/* SAWARO_RECOVERY_MARKER ID:R3_SALESFORCE_TASK_DEFECT FUTURE_MODULE:integrations/salesforce/task-handoff */var sfLink=`<a class="btn primary block section" style="text-decoration:none" href="${esc(sfTaskUrl(a))}" target="_blank" rel="noopener noreferrer" title="OPEN DEFECT: Desktop-SSO Task-Dialog noch nicht verifiziert">In Salesforce als Task anlegen · TEST</a><div class="sub" style="margin-top:-8px">Subject, Name, Bezug zu und Untertyp bitte in Salesforce prüfen bzw. auswählen.</div><div class="r3-open-defect"><b>OPEN DEFECT:</b> Event-Handoff war funktionsfähig; der Task-Dialog öffnete im Desktop-SSO zuletzt nur als defektes Overlay. Diese Schaltfläche ist bis zur isolierten R10-Abnahme ein Testpfad, keine verifizierte Funktion.</div>`;$('sosx-actionDetail').innerHTML=`<div class="card ${a.priority==='KRITISCH'?'red':''}"><div class="action-head"><div><span class="chip ${a.priority==='KRITISCH'?'red':a.priority==='HOCH'?'amber':'blue'}">${esc(a.priority)}</span><h2 class="section">${esc(a.title)}</h2><p class="sub">${esc(a.account_name)} · ${esc(a.main_segment)}</p></div><div class="progress" style="--p:${Number(a.progress||0)}"><b>${Number(a.progress||0)}%</b></div></div><div class="section"><div class="eyebrow">Ziel</div><p class="lead">${esc(a.reason)}</p></div><div class="signal-grid"><div><small>Owner</small><b>${esc(a.owner)}</b></div><div><small>Start</small><b>${esc(a.created_at)}</b></div><div><small>Fällig</small><b>${esc(a.due_date)}</b></div><div><small>Reminder</small><b>${esc(a.follow_up_date||'—')}</b></div></div><div class="section"><div class="eyebrow">Aktionsplan</div><div class="timeline"><div class="step done"><b>Vorbereitung & Datenreview</b><br>${esc(a.created_at)} · ${esc(a.owner)}</div><div class="step current"><b>${esc(a.next_step)}</b><br>nächster operativer Schritt</div><div class="step"><b>Ergebnisse & Commitments dokumentieren</b><br>Outcome klassifizieren</div><div class="step"><b>Maßnahmen ableiten & nachverfolgen</b><br>Follow-up sauber terminieren</div></div></div>${sfLink}</div>`}function renderAccount(){let acc=[...new Map(state.actions.map(a=>[a.account_id,a])).values()].sort((a,b)=>a.account_name.localeCompare(b.account_name));let cur=$('sosx-accountSelect').value;$('sosx-accountSelect').innerHTML=acc.map(a=>`<option value="${esc(a.account_id)}">${esc(a.account_name)}</option>`).join('');if(cur&&acc.some(a=>a.account_id===cur))$('sosx-accountSelect').value=cur;if(!$('sosx-accountSelect').value&&acc[0])$('sosx-accountSelect').value=acc[0].account_id;let id=$('sosx-accountSelect').value,filter=$('sosx-accountFilter').value;let arr=state.actions.filter(a=>a.account_id===id);if(filter==='ACTIVE')arr=arr.filter(activeA);if(filter==='DONE')arr=arr.filter(a=>a.status==='DONE');$('sosx-accountThread').innerHTML=arr.sort(sortA).map(actionCard).join('')||empty('Noch keine Actions.');let active=state.actions.filter(a=>a.account_id===id&&activeA(a)),done=state.actions.filter(a=>a.account_id===id&&a.status==='DONE'),impact=active.reduce((s,a)=>s+Number(a.commercial_impact_eur||0),0);$('sosx-accountPulse').innerHTML=`<div class="action"><div class="title">Active actions</div><div class="meta">${active.length}</div></div><div class="action"><div class="title">Completed</div><div class="meta">${done.length}</div></div><div class="action"><div class="title">Action impact · unverified</div><div class="meta">${eur(impact)}</div></div>`;$('sosx-threadNote').value=state.thread_notes[id]||''}var sosxReportMode='weekly';
+function selectCalendarDate(d){selectedDate=d;calendarCursor=d;renderCalendar();renderWhere()}function renderCalendar(){if(!$('sosx-calendarGrid'))return;var _capMoved=sosxEnforceCriticalCapacity();const open=state.actions.filter(activeA),done=state.actions.filter(a=>a.status==='DONE');$('sosx-calWeek').textContent=open.filter(a=>sosxExecutionDate(a)>=today&&sosxExecutionDate(a)<=addDays(today,7)).length;$('sosx-calLate').textContent=open.filter(late).length;$('sosx-calSelected').textContent=tasksOn(selectedDate).length;$('sosx-calDone').textContent=done.length;$('sosx-calendarMonth').textContent=monthLabel(calendarCursor);$('sosx-calendarSummary').textContent='Execution-Ansicht · '+open.length+' aktive Tasks · Business-Fälligkeit bleibt separat';const wds=['Mo','Di','Mi','Do','Fr','Sa','So'];$('sosx-calendarWeekdays').innerHTML=`<div class="cal-weekday cal-kw-head">KW</div>`+wds.map(w=>`<div class="cal-weekday">${w}</div>`).join('');let cur=dateObj(calendarCursor),first=new Date(cur.getFullYear(),cur.getMonth(),1),start=new Date(first);let offset=(first.getDay()+6)%7;start.setDate(first.getDate()-offset);let html='';for(let i=0;i<42;i++){let d=new Date(start);d.setDate(start.getDate()+i);if(i%7===0){html+=`<div class="cal-kw">${srIsoWeek(d)}</div>`;}let ds=iso(d),arr=tasksOn(ds),cls='cal-day'+(sameMonth(ds,calendarCursor)?'':' out')+(ds===today?' today':'')+(ds===selectedDate?' selected':'');html+=`<button class="${cls}" onclick="SOSX.selectCalendarDate('${ds}')"><span class="cal-num">${d.getDate()}${arr.length?`<i class="cal-badge">${arr.length}</i>`:''}</span>${arr.slice(0,3).map(sosxCalendarTask).join('')}</button>`}$('sosx-calendarGrid').innerHTML=html;$('sosx-selectedDateTitle').textContent='Agenda · '+dayLabel(selectedDate);let dayTasks=tasksOn(selectedDate);$('sosx-selectedDateMeta').textContent=dayTasks.length+' Task'+(dayTasks.length===1?'':'s')+' geplant';$('sosx-calendarAgenda').innerHTML=dayTasks.map(function(a){return actionCard(a,false,'calendar')}).join('')||empty('Keine Tasks an diesem Ausführungstag.');let upcoming=open.filter(a=>sosxExecutionDate(a)>=today&&sosxExecutionDate(a)<=addDays(today,7)).sort(function(a,b){return sosxExecutionDate(a).localeCompare(sosxExecutionDate(b))||sortA(a,b)});$('sosx-calendarUpcoming').innerHTML=upcoming.map(function(a){return actionCard(a,false,'calendar')}).join('')||empty('Keine geplanten Tasks in den nächsten 7 Tagen.');let jump=[];for(let i=0;i<7;i++){let ds=addDays(today,i),arr=tasksOn(ds);jump.push(`<button class="date-pill ${ds===selectedDate?'active':''}" onclick="SOSX.selectCalendarDate('${ds}')"><span>${dateObj(ds).toLocaleDateString('de-AT',{weekday:'short'})}</span><b>${dateObj(ds).getDate()}</b><span>${arr.length} Task</span></button>`)}$('sosx-dateJump').innerHTML=jump.join('');var _kw=$('sosx-currentKW');if(_kw)_kw.textContent='KW '+srIsoWeek(today);}
+function renderInbox(){
+  var resolved=radarSignals.map(function(s){return{signal:s,resolution:resolveSignalAction(s)}});
+  var open=resolved.filter(function(x){return x.resolution.state==='OPEN'});
+  $('sosx-openSignalCount').textContent=open.length;
+  $('sosx-proposalList').innerHTML=resolved.map(function(x){
+    var s=x.signal,r=x.resolution,a=r.action,status=String(a&&a.status||'').toUpperCase();
+    var existing=r.state==='EXISTING',unresolved=r.state==='LINK_UNRESOLVED';
+    var label='Offen',tone='amber';
+    if(unresolved){label='Zuordnung prüfen';tone='amber';}
+    else if(existing&&status==='DONE'){label='Erledigt / vorhanden';tone='lime';}
+    else if(existing&&status==='CANCELLED'){label='Abgebrochen / vorhanden';tone='muted';}
+    else if(existing){label='Bereits in SOS';tone='lime';}
+    var ref='';
+    if(existing&&a){
+      var plan=sosxExecutionDate(a)||'—',due=sosxBusinessDate(a)||'—';
+      ref='<div class="meta"><b>Bestehende Action:</b> '+esc(a.action_id||'—')+' · '+esc(a.status||'—')+' · Geplant '+esc(plan)+(due!==plan?' · Fällig '+esc(due):'')+'</div>';
+    }else if(unresolved){
+      ref='<div class="meta"><b>Identity:</b> bestehende Zuordnung ist nicht eindeutig. Kein neuer SOS-Eintrag wird erzeugt.</div>';
+    }
+    var buttons='';
+    if(existing&&a){
+      buttons='<button class="tiny primary" onclick="SOSX.openSignalAction(\''+String(a.action_id||'').replace(/'/g,"\\'")+'\')">Action öffnen</button><button class="tiny" onclick="SOSX.showSignalInCalendar(\''+String(a.action_id||'').replace(/'/g,"\\'")+'\')">Im Kalender zeigen</button>';
+    }else if(unresolved){
+      buttons='<button class="tiny primary" disabled>Kein Blind-Push</button>';
+    }else{
+      buttons='<button class="tiny primary" onclick="SOSX.convertSignal(\''+String(s.signal_id||'').replace(/'/g,"\\'")+'\')">In SOS + Kalender übernehmen</button><button class="tiny" onclick="SOSX.editSignal(\''+String(s.signal_id||'').replace(/'/g,"\\'")+'\')">Anpassen</button>';
+    }
+    return '<div class="proposal '+sosxVisualClass(s)+'"><div class="action-head"><div><h3>'+esc(s.account_name)+'</h3><div class="title">'+esc(s.title)+'</div><div class="signal-badges">'+chip(s.priority)+sosxSignalChip(s)+'</div><div class="meta">'+esc(s.reason)+'</div></div></div><div class="signal-grid"><div><small>Priority</small><b>'+esc(sosxNormPriority(s.priority))+'</b></div><div><small>Signalgrund</small><b>'+esc(sosxSignalLabel(s))+'</b></div><div><small>FY26 Visibility</small><b>'+s.visibility+'</b></div></div>'+ref+'<div class="note"><b>Empfohlene Aktion:</b> '+esc(s.next_step)+'</div><div class="buttons"><span class="chip '+tone+'">'+esc(label)+'</span>'+buttons+'</div></div>';
+  }).join('');
+}function renderActionDetail(){let a=state.actions.find(x=>x.action_id===selectedActionId)||state.actions.find(activeA)||state.actions[0];if(!a)return;selectedActionId=a.action_id;$('sosx-quickOutcome').value=a.outcome||'ADVANCED';$('sosx-quickOutcomeNote').value=a.outcome_note||'';/* SAWARO_RECOVERY_MARKER ID:R3_SALESFORCE_TASK_DEFECT FUTURE_MODULE:integrations/salesforce/task-handoff */var sfLink=`<a class="btn primary block section" style="text-decoration:none" href="${esc(sfTaskUrl(a))}" target="_blank" rel="noopener noreferrer" title="OPEN DEFECT: Desktop-SSO Task-Dialog noch nicht verifiziert">In Salesforce als Task anlegen · TEST</a><div class="sub" style="margin-top:-8px">Subject, Name, Bezug zu und Untertyp bitte in Salesforce prüfen bzw. auswählen.</div><div class="r3-open-defect"><b>OPEN DEFECT:</b> Event-Handoff war funktionsfähig; der Task-Dialog öffnete im Desktop-SSO zuletzt nur als defektes Overlay. Diese Schaltfläche ist bis zur isolierten R10-Abnahme ein Testpfad, keine verifizierte Funktion.</div>`;var pd=sosxExecutionDate(a);$('sosx-actionDetail').innerHTML=`<div class="card ${a.priority==='KRITISCH'?'red':''}"><div class="action-head"><div><div class="signal-badges">${chip(a.priority)}${sosxSignalChip(a)}</div><h2 class="section">${esc(a.title)}</h2><p class="sub">${esc(a.account_name)} · ${esc(a.main_segment)}</p></div><div class="progress" style="--p:${Number(a.progress||0)}"><b>${Number(a.progress||0)}%</b></div></div><div class="section"><div class="eyebrow">Ziel</div><p class="lead">${esc(a.reason)}</p></div><div class="signal-grid"><div><small>Owner</small><b>${esc(a.owner)}</b></div><div><small>Start</small><b>${esc(a.created_at)}</b></div><div><small>Fällig</small><b>${esc(a.due_date||'—')}</b></div><div><small>Geplant</small><b>${esc(pd||'—')}</b></div><div><small>Reminder</small><b>${esc(a.follow_up_date||'—')}</b></div></div><div class="section"><div class="eyebrow">Aktionsplan</div><div class="timeline"><div class="step done"><b>Vorbereitung & Datenreview</b><br>${esc(a.created_at)} · ${esc(a.owner)}</div><div class="step current"><b>${esc(a.next_step)}</b><br>nächster operativer Schritt</div><div class="step"><b>Ergebnisse & Commitments dokumentieren</b><br>Outcome klassifizieren</div><div class="step"><b>Maßnahmen ableiten & nachverfolgen</b><br>Follow-up sauber terminieren</div></div></div>${sfLink}</div>`}function renderAccount(){let acc=[...new Map(state.actions.map(a=>[a.account_id,a])).values()].sort((a,b)=>a.account_name.localeCompare(b.account_name));let cur=$('sosx-accountSelect').value;$('sosx-accountSelect').innerHTML=acc.map(a=>`<option value="${esc(a.account_id)}">${esc(a.account_name)}</option>`).join('');if(cur&&acc.some(a=>a.account_id===cur))$('sosx-accountSelect').value=cur;if(!$('sosx-accountSelect').value&&acc[0])$('sosx-accountSelect').value=acc[0].account_id;let id=$('sosx-accountSelect').value,filter=$('sosx-accountFilter').value;let arr=state.actions.filter(a=>a.account_id===id);if(filter==='ACTIVE')arr=arr.filter(activeA);if(filter==='DONE')arr=arr.filter(a=>a.status==='DONE');$('sosx-accountThread').innerHTML=arr.sort(sortA).map(actionCard).join('')||empty('Noch keine Actions.');let active=state.actions.filter(a=>a.account_id===id&&activeA(a)),done=state.actions.filter(a=>a.account_id===id&&a.status==='DONE'),impact=active.reduce((s,a)=>s+Number(a.commercial_impact_eur||0),0);$('sosx-accountPulse').innerHTML=`<div class="action"><div class="title">Active actions</div><div class="meta">${active.length}</div></div><div class="action"><div class="title">Completed</div><div class="meta">${done.length}</div></div><div class="action"><div class="title">Action impact · unverified</div><div class="meta">${eur(impact)}</div></div>`;$('sosx-threadNote').value=state.thread_notes[id]||''}var sosxReportMode='weekly';
 function setReportMode(m){sosxReportMode=m;try{document.querySelectorAll('[data-sosx-rmode]').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-sosx-rmode')===m);});}catch(e){}renderReport();}
 function eurR(v){try{return eur(v);}catch(e){return (Number(v)||0).toLocaleString('de-DE')+' €';}}
 
@@ -11502,11 +11716,58 @@ function buildWeeklyEventReport(){var m=sosxWeeklyEventModel(),p=m.period;var di
 function renderReport(){if(sosxReportMode==='ccr'){$('sosx-reportPreview').innerHTML=buildCCRReport();return;}if(sosxReportMode==='outcome'){$('sosx-reportPreview').innerHTML=buildOutcomeReport();return;}if(sosxReportMode==='monthly'){$('sosx-reportPreview').innerHTML=buildMonthlySummary();return;}$('sosx-reportPreview').innerHTML=buildWeeklyEventReport()}
 function empty(t){return `<div class="action"><div class="note">${esc(t)}</div></div>`}function emptySmall(t){return `<div class="action"><div class="meta">${esc(t)}</div></div>`}function srTriggerType(s){var t=String((s&&(s.title||s.risk_type||s.type))||'').toLowerCase();if(t.indexOf('critical target gap')>=0)return 'critical-target-gap';if(t.indexOf('target coverage')>=0)return 'target-coverage-gap';if(t.indexOf('structural break')>=0)return 'structural-break';if(t.indexOf('visibility gap')>=0)return 'visibility-gap';if(t.indexOf('defend')>=0)return 'defend-account';if(t.indexOf('reactivat')>=0||t.indexOf('reaktiv')>=0)return 'reactivation';var rt=String((s&&s.risk_type)||'').toLowerCase().replace(/[^a-z]+/g,'-');return rt||t.replace(/[^a-z0-9]+/g,'-').slice(0,40)||'signal';}
 function srAlertId(s){return 'ALERT-'+String((s&&s.account_id)||'NA').replace(/[^A-Za-z0-9]+/g,'')+'-'+srTriggerType(s);}
-function srActionHasTrigger(alertId){try{return state.actions.some(function(a){return a&&(a.alert_id===alertId||srAlertId({account_id:a.account_id,title:a.title,risk_type:a.risk_type})===alertId);});}catch(e){return false;}}
-function sosxCritCascade(due,prio,excludeId){if(sosxNormPriority(prio)!=='KRITISCH')return due;return sosxFindCriticalSlot(due||today,excludeId,state.actions)}function convertSignal(id){let s=radarSignals.find(x=>x.signal_id===id);if(!s)return;var alertId=srAlertId(s);if(state.actions.some(a=>a.source_signal_id===id)||srActionHasTrigger(alertId)){toast('Bereits im Kalender — kein doppelter Eintrag.','warn');return;}var dd=sosxCritCascade(s.due_date,s.priority,'');state.actions.push({action_id:nextId(),alert_id:alertId,source_signal_id:s.signal_id,account_id:s.account_id,account_name:s.account_name,main_segment:s.main_segment,title:s.title,reason:s.reason,next_step:s.next_step,owner:'MF',priority:s.priority,status:'PLANNED',due_date:dd,created_at:today,last_touch:today,follow_up_date:addDays(dd,3),commercial_impact_eur:s.commercial_impact_eur,risk_type:s.risk_type,outcome:'',outcome_note:'',progress:10});store('radar-accepted');renderAll();toast(dd!==s.due_date?'Signal übernommen · KRITISCH-Limit (4/Tag): fällig '+dd:'Signal in SOS und Kalender übernommen.')}function editSignal(id){let s=radarSignals.find(x=>x.signal_id===id);if(!s)return;openEditor();$('sosx-fId').value='';$('sosx-fTitle').value=s.title;$('sosx-fAccountId').value=s.account_id;$('sosx-fAccountName').value=s.account_name;$('sosx-fSegment').value=s.main_segment;$('sosx-fType').value=s.risk_type;$('sosx-fPriority').value=s.priority;$('sosx-fStatus').value='PLANNED';$('sosx-fDue').value=s.due_date;$('sosx-fFollow').value=addDays(s.due_date,3);$('sosx-fImpact').value=s.commercial_impact_eur;$('sosx-fReason').value=s.reason;$('sosx-fNext').value=s.next_step}function openEditor(id){let a=id?state.actions.find(x=>x.action_id===id):null;$('sosx-editor').classList.add('open');$('sosx-editorTitle').textContent=a?'Action bearbeiten':'Neue Action';$('sosx-fId').value=a?.action_id||'';$('sosx-fTitle').value=a?.title||'';$('sosx-fOwner').value=a?.owner||'MF';$('sosx-fAccountId').value=a?.account_id||'';$('sosx-fAccountName').value=a?.account_name||'';$('sosx-fSegment').value=a?.main_segment||'Other';$('sosx-fType').value=a?.risk_type||'Opportunity';$('sosx-fPriority').value=a?.priority||'MITTEL';$('sosx-fStatus').value=a?.status||'PLANNED';(function(){var pv=Number(a?.progress||0);var s=$('sosx-fProgress');if(s)s.value=pv;var lbl=$('sosx-fProgressVal');if(lbl)lbl.textContent=pv;})();$('sosx-fDue').value=a?.due_date||today;$('sosx-fFollow').value=a?.follow_up_date||addDays(today,3);$('sosx-fImpact').value=a?.commercial_impact_eur||0;$('sosx-fReason').value=a?.reason||'';$('sosx-fNext').value=a?.next_step||'';$('sosx-fOutcome').value=a?.outcome||'';$('sosx-fOutcomeNote').value=a?.outcome_note||'';var _ex=window.SAWARO26_R7B?window.SAWARO26_R7B.normalizeExposure(a||{}):{status:'NOT_SET',type:'OTHER',amount_eur:0,probability:0,evidence_level:'UNSET',exposure_id:'',evidence_note:''};$('sosx-fExposureStatus').value=_ex.status||'NOT_SET';$('sosx-fExposureType').value=_ex.type||'OTHER';$('sosx-fExposureAmount').value=_ex.amount_eur||0;$('sosx-fExposureProbability').value=String(_ex.probability||0);$('sosx-fExposureEvidence').value=_ex.evidence_level||'UNSET';$('sosx-fExposureId').value=_ex.exposure_id||'';$('sosx-fExposureNote').value=_ex.evidence_note||'';var _wk=$('sosx-fWeekly');if(_wk)_wk.checked=(a?a.includeInWeekly!==false:true)}function closeEditor(){$('sosx-editor').classList.remove('open')}function saveEditor(){let id=$('sosx-fId').value||nextId();let old=state.actions.find(a=>a.action_id===id);let a={action_id:id,alert_id:old?.alert_id||'',source_signal_id:old?.source_signal_id||'',parent_action_id:old?.parent_action_id||'',source_action_id:old?.source_action_id||'',account_id:$('sosx-fAccountId').value||$('sosx-fAccountName').value.toUpperCase().replace(/[^A-Z0-9]+/g,'-'),account_name:$('sosx-fAccountName').value||'Scope',main_segment:$('sosx-fSegment').value,title:$('sosx-fTitle').value||'Untitled Action',reason:$('sosx-fReason').value||'Reason to be defined.',next_step:$('sosx-fNext').value||'Define concrete next step.',owner:$('sosx-fOwner').value||'MF',priority:$('sosx-fPriority').value,status:$('sosx-fStatus').value,due_date:$('sosx-fDue').value||today,original_due_date:old?.original_due_date||'',capacity_shifted_from:old?.capacity_shifted_from||'',capacity_shifted_at:old?.capacity_shifted_at||'',created_at:old?.created_at||today,last_touch:today,follow_up_date:$('sosx-fFollow').value||'',commercial_impact_eur:Number($('sosx-fImpact').value||0),risk_type:$('sosx-fType').value,outcome:$('sosx-fOutcome').value,outcome_note:$('sosx-fOutcomeNote').value,exposure:(function(){var st=String($('sosx-fExposureStatus').value||'NOT_SET').toUpperCase(),amount=Number($('sosx-fExposureAmount').value||0),prob=Number($('sosx-fExposureProbability').value||0),ev=String($('sosx-fExposureEvidence').value||'UNSET').toUpperCase(),note=String($('sosx-fExposureNote').value||'').trim(),type=String($('sosx-fExposureType').value||'OTHER').toUpperCase(),eid=String($('sosx-fExposureId').value||old?.exposure?.exposure_id||'').trim();if(st==='NOT_SET'&&!amount&&!note&&!eid)return null;if(!eid&&window.SAWARO26_R7B)eid=window.SAWARO26_R7B.nextExposureId($('sosx-fAccountId').value||$('sosx-fAccountName').value);return{schema:'SAWARO26_EXPOSURE_V1',exposure_id:eid,status:st,type:type,amount_eur:Math.max(0,amount),probability:prob,evidence_level:ev,evidence_note:note,as_of:today,owner:$('sosx-fOwner').value||'MF'};})(),progress:(function(){var st=$('sosx-fStatus').value;var sliderEl=$('sosx-fProgress');var manual=sliderEl?Number(sliderEl.value):NaN;if(st==='DONE')return 100;if(st==='CANCELLED')return 0;if(!isNaN(manual)&&manual>0)return manual;var def={PLANNED:10,IN_PROGRESS:50,WAITING_CUSTOMER:65,WAITING_INTERNAL:65,ESCALATED:75}[st];return def!=null?def:(old?.progress||0);})()};a.includeInWeekly=($('sosx-fWeekly')?$('sosx-fWeekly').checked:(old?old.includeInWeekly!==false:true));if(window.SAWARO26_R7B){var _vx=window.SAWARO26_R7B.normalizeExposure(a);if(_vx.status==='CONFIRMED'&&!_vx.reportable){toast('Exposure CONFIRMED ist unvollständig: '+_vx.issues.join(', '),'err');return;}}if(a.status==='DONE'&&!a.outcome){toast('DONE braucht ein Outcome.');return}var _od=a.due_date;if(activeA(a))a.due_date=sosxCritCascade(a.due_date,a.priority,id);state.actions=old?state.actions.map(x=>x.action_id===id?a:x):state.actions.concat(a);selectedActionId=a.action_id;selectedDate=a.due_date||selectedDate;calendarCursor=selectedDate;store('editor-save');closeEditor();requestAnimationFrame(()=>$('sosx-editor').classList.remove('open'));renderAll();toast(a.due_date!==_od?'Gespeichert · KRITISCH-Limit (4/Tag): fällig '+a.due_date:'Action gespeichert.')}function saveQuickOutcome(){let a=state.actions.find(x=>x.action_id===selectedActionId);if(!a)return;if(!$('sosx-quickOutcome').value){toast('Outcome wählen.');return}a.status='DONE';a.progress=100;a.outcome=$('sosx-quickOutcome').value;a.outcome_note=$('sosx-quickOutcomeNote').value;a.last_touch=today;selectedDate=a.due_date||today;calendarCursor=selectedDate;store('quick-outcome');showScreen('calendar');toast('Update erfasst und Action Detail geschlossen.')}function createFollowUp(id){let a=state.actions.find(x=>x.action_id===id);if(!a)return;var _fo=a.follow_up_date||addDays(today,3);var fdd=sosxCritCascade(_fo,a.priority,'');state.actions.push({...a,exposure:a.exposure?JSON.parse(JSON.stringify(a.exposure)):null,action_id:nextId(),source_signal_id:'',parent_action_id:a.action_id||'',source_action_id:a.action_id||'',title:'Follow-up · '+a.title,reason:a.outcome_note||a.reason,next_step:'Follow-up durchführen und Ergebnis aktualisieren.',status:'PLANNED',due_date:fdd,created_at:today,last_touch:today,follow_up_date:addDays(fdd,6),outcome:'',outcome_note:'',progress:0});store('followup-created');renderAll();toast(fdd!==_fo?'Follow-up · KRITISCH-Limit (4/Tag): fällig '+fdd:'Follow-up erstellt.')}function saveThreadNote(){state.thread_notes[$('sosx-accountSelect').value]=$('sosx-threadNote').value;store('thread-note');toast('Thread Note gespeichert.')}function download(name,text,type='text/plain'){let blob=new Blob([text],{type});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),600)}function reportText(){var el=$('sosx-reportPreview');var t=(el&&(el.innerText||el.textContent))||'';return t.replace(/\n{3,}/g,'\n\n')}function downloadReport(){var n=sosxReportMode==='ccr'?'MF_Customer_Contact_Report':sosxReportMode==='outcome'?'MF_Outcome_Report':sosxReportMode==='monthly'?'MF_Monthly_Summary':'MF_Weekly_Execution_Report';download(n+'_'+today.replaceAll('-','')+'.md',reportPlainText(),'text/markdown')}function exportState(){sosxEnforceCriticalCapacity();store('state-export');download('SAWARO26_SOS_ACTION_STATE_'+today.replaceAll('-','')+'.json',JSON.stringify(state,null,2),'application/json')}function importStateFile(ev){let f=ev.target.files?.[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let s=JSON.parse(r.result);if(!Array.isArray(s.actions))throw Error('bad');state=sawaroJournalAdoptImportedState(s);var moved=sosxEnforceCriticalCapacity();if(!moved)store('state-import');renderAll();toast(moved?('Action State importiert · '+moved+' kritische Action(s) verteilt · max 4/Werktag'):'Action State importiert.')}catch(e){toast('Import fehlgeschlagen: ungültiges JSON.')}};r.readAsText(f);ev.target.value=''}function ics(d){return String(d||today).replaceAll('-','')}function escIcs(s){return String(s??'').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;')}function exportICS(){let lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//SAWARO26//SOS AAA UI v3//DE'];state.actions.filter(activeA).forEach(a=>{lines.push('BEGIN:VEVENT',`UID:sawaro-${a.action_id}@sawaro26`,`DTSTAMP:${ics(today)}T080000Z`,`DTSTART;VALUE=DATE:${ics(a.due_date)}`,`SUMMARY:${escIcs(a.priority+' · '+a.account_name+' · '+a.title)}`,`DESCRIPTION:${escIcs('SOS mirror only. Master remains Action State. Next: '+a.next_step)}`,'END:VEVENT')});lines.push('END:VCALENDAR');download('SAWARO26_SOS_ACTIONS_MIRROR_'+today.replaceAll('-','')+'.ics',lines.join('\r\n'),'text/calendar')}function toast(msg){const el=document.getElementById('sosx-toast');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2600)}document.addEventListener('keydown',e=>{if(e.key==='Escape')closeEditor()});$('sosx-editor').addEventListener('click',e=>{if(e.target===$('sosx-editor'))closeEditor()});function initSelect(id,vals,blank=false){let el=$(id);if(!el)return;el.innerHTML=(blank?['']:[]).concat(vals).map(v=>`<option value="${esc(v)}">${esc(v||'—')}</option>`).join('')}function init(){iconNav();initSelect('sosx-quickOutcome',outcomes.filter(Boolean));initSelect('sosx-fSegment',segments);initSelect('sosx-fType',riskTypes);initSelect('sosx-fPriority',priorities);initSelect('sosx-fStatus',statuses);initSelect('sosx-fOutcome',outcomes,true);try{SAWARO_BACKUP.init();}catch(e){}renderAll()}if(typeof iconNav==='function'){try{iconNav();}catch(e){}}
-window.SOSX_SAVE_WK_COMMENT=function(wk,val){try{state.weekly_comments=state.weekly_comments||{};state.weekly_comments[wk]=val;store('weekly-comment');}catch(e){}};window.SOSX={getState:function(){return state;},auditCriticalCapacity:function(){var by={};state.actions.filter(function(a){return activeA(a)&&sosxIsCritical(a)}).forEach(function(a){by[a.due_date]=(by[a.due_date]||0)+1});return{limit:SOSX_CRIT_LIMIT,max:Object.keys(by).reduce(function(m,k){return Math.max(m,by[k])},0),byDate:by,violations:Object.keys(by).filter(function(k){return by[k]>SOSX_CRIT_LIMIT})}},ensureCriticalCapacity:function(){return sosxEnforceCriticalCapacity()},linkBackupFile:function(){return SAWARO_BACKUP.pickBackupFile();},downloadBackup:function(){sosxEnforceCriticalCapacity();store();return SAWARO_BACKUP.manualDownload();},setReportMode:setReportMode,moveReportWeek:sosxWeeklyMoveWeek,resetReportWeek:sosxWeeklyResetWeek,weeklyEventModel:sosxWeeklyEventModel,buildWeeklyEventReport:buildWeeklyEventReport,sosExpectedByAccount:sosExpectedByAccount,sosExpectedTotal:sosExpectedTotal,actionExpectedValue:actionExpectedValue,actionProbability:actionProbability,printReport:printReport,copyReportText:copyReportText,downloadReportText:downloadReportText,reportPlainText:reportPlainText,buildCCRReport:buildCCRReport,buildOutcomeReport:buildOutcomeReport,buildMonthlySummary:buildMonthlySummary,cleanExternalReportText:cleanExternalReportText,actionCard:actionCard,sfTaskUrl:sfTaskUrl,sfTaskSubject:sfTaskSubject,sfTaskDescription:sfTaskDescription,sfEventUrl:sfEventUrl,activeA:activeA,addDays:addDays,buildLiveSignals:buildLiveSignals,chip:chip,closeEditor:closeEditor,cls:cls,convertSignal:convertSignal,createFollowUp:createFollowUp,dateObj:dateObj,dayLabel:dayLabel,download:download,downloadReport:downloadReport,dueWeek:dueWeek,editSignal:editSignal,empty:empty,emptySmall:emptySmall,enterApp:enterApp,esc:esc,escIcs:escIcs,eur:eur,exportICS:exportICS,exportState:exportState,iconNav:iconNav,ics:ics,importStateFile:importStateFile,init:init,initSelect:initSelect,iso:iso,labelFor:labelFor,late:late,load:load,monthLabel:monthLabel,moveCalendar:moveCalendar,nextId:nextId,openEditor:openEditor,renderAccount:renderAccount,renderActionDetail:renderActionDetail,renderAll:renderAll,renderCalendar:renderCalendar,renderDashboard:renderDashboard,renderInbox:renderInbox,renderKPIs:renderKPIs,renderReport:renderReport,renderSOS:renderSOS,renderWhere:renderWhere,reportText:reportText,sameMonth:sameMonth,saveEditor:saveEditor,saveQuickOutcome:saveQuickOutcome,saveThreadNote:saveThreadNote,selectAction:selectAction,selectCalendarDate:selectCalendarDate,showScreen:showScreen,sortA:sortA,store:store,eventJournal:sawaroJournalEvents,eventsForAction:sawaroJournalEvents,recordLifecycleEvent:sawaroJournalRecord,auditEventJournal:sawaroJournalAudit,exportEventJournal:sawaroJournalExport,tasksOn:tasksOn,toast:toast};
+/* SAWARO_RECOVERY_MARKER ID:R8_2_8_2_SIGNAL_ACTION_IDENTITY_REFERENCE FUTURE_MODULE:domain/sos/signal-action-identity */
+function sosxIsFollowUpAction(a){return !!(a&&(a.parent_action_id||a.source_action_id||/^Follow-up\s*[·:-]/i.test(String(a.title||''))))}
+function sosxLegacyAlertIdsForSignal(s){
+  var sid=String((s&&s.signal_id)||'').trim(),acc=String((s&&s.account_id)||'').replace(/[^A-Za-z0-9]+/g,''),ids=[];
+  if(!sid)return ids;
+  ids.push(sid);
+  if(/^radar-/i.test(sid)){ids.push('ALERT-'+acc+'-critical-target-gap','ALERT-'+acc+'-target-coverage-gap');}
+  else if(/^runtime-/i.test(sid)){ids.push('ALERT-'+acc+'-structural-break','ALERT-'+acc+'-defend-account');}
+  else if(/^silent-/i.test(sid)){ids.push('ALERT-'+acc+'-visibility-gap');}
+  return Array.from(new Set(ids.filter(Boolean)));
+}
+function resolveSignalAction(s){
+  try{
+    var sid=String((s&&s.signal_id)||'').trim();
+    if(!sid)return{state:'LINK_UNRESOLVED',match:'MISSING_SIGNAL_ID',action:null,candidates:[]};
+    var sourceActions=(Array.isArray(state.actions)?state.actions:[]).filter(function(a){return a&&!sosxIsFollowUpAction(a)});
+    var exact=sourceActions.filter(function(a){return String(a.source_signal_id||'').trim()===sid});
+    if(exact.length===1)return{state:'EXISTING',match:'SOURCE_SIGNAL_ID',action:exact[0],candidates:exact};
+    if(exact.length>1)return{state:'LINK_UNRESOLVED',match:'AMBIGUOUS_SOURCE_SIGNAL_ID',action:null,candidates:exact};
+    var legacyIds=sosxLegacyAlertIdsForSignal(s);
+    var legacy=sourceActions.filter(function(a){return !String(a.source_signal_id||'').trim()&&legacyIds.indexOf(String(a.alert_id||'').trim())>=0});
+    if(legacy.length===1)return{state:'EXISTING',match:'LEGACY_ALERT_ID',action:legacy[0],candidates:legacy};
+    if(legacy.length>1)return{state:'LINK_UNRESOLVED',match:'AMBIGUOUS_LEGACY_ALERT_ID',action:null,candidates:legacy};
+    return{state:'OPEN',match:'NONE',action:null,candidates:[]};
+  }catch(e){return{state:'LINK_UNRESOLVED',match:'RESOLVER_ERROR',action:null,candidates:[]}}
+}
+function srActionHasTrigger(alertId){try{return state.actions.some(function(a){return a&&!sosxIsFollowUpAction(a)&&String(a.alert_id||'')===String(alertId||'');});}catch(e){return false;}}
+function sosxCritCascade(due,prio,excludeId){var p=sosxNormPriority(prio);if(p==='KRITISCH')return sosxFindCriticalSlot(due||today,excludeId,state.actions);if(p==='HOCH')return sosxFindHighWorkdaySlot(due||today,excludeId,state.actions);return due}function convertSignal(id){
+  let s=radarSignals.find(x=>x.signal_id===id);if(!s)return;
+  var resolution=resolveSignalAction(s);
+  if(resolution.state==='EXISTING'){
+    var a=resolution.action,plan=sosxExecutionDate(a)||'—';
+    toast('Bereits in SOS · '+String(a&&a.action_id||'')+' · geplant '+plan,'warn');
+    return;
+  }
+  if(resolution.state==='LINK_UNRESOLVED'){
+    toast('Zuordnung unklar — kein neuer SOS-Eintrag.','warn');
+    return;
+  }
+  var alertId=srAlertId(s),businessDue=s.due_date||today,planned=sosxCritCascade(businessDue,s.priority,'');
+  state.actions.push({action_id:nextId(),alert_id:alertId,source_signal_id:s.signal_id,account_id:s.account_id,account_name:s.account_name,main_segment:s.main_segment,title:s.title,reason:s.reason,next_step:s.next_step,owner:'MF',priority:s.priority,status:'PLANNED',due_date:businessDue,planned_execution_date:planned,execution_date_migration_status:'DIRECT',created_at:today,last_touch:today,follow_up_date:addDays(planned,3),commercial_impact_eur:s.commercial_impact_eur,risk_type:s.risk_type,outcome:'',outcome_note:'',progress:10});
+  store('radar-accepted');renderAll();toast(planned!==businessDue?'Signal übernommen · fällig '+businessDue+' · geplant '+planned:'Signal in SOS und Kalender übernommen.');
+}function editSignal(id){let s=radarSignals.find(x=>x.signal_id===id);if(!s)return;openEditor();$('sosx-fId').value='';$('sosx-fTitle').value=s.title;$('sosx-fAccountId').value=s.account_id;$('sosx-fAccountName').value=s.account_name;$('sosx-fSegment').value=s.main_segment;$('sosx-fType').value=s.risk_type;$('sosx-fPriority').value=s.priority;$('sosx-fStatus').value='PLANNED';$('sosx-fDue').value=s.due_date;$('sosx-fFollow').value=addDays(s.due_date,3);$('sosx-fImpact').value=s.commercial_impact_eur;$('sosx-fReason').value=s.reason;$('sosx-fNext').value=s.next_step}function openEditor(id){let a=id?state.actions.find(x=>x.action_id===id):null;$('sosx-editor').classList.add('open');$('sosx-editorTitle').textContent=a?'Action bearbeiten':'Neue Action';$('sosx-fId').value=a?.action_id||'';$('sosx-fTitle').value=a?.title||'';$('sosx-fOwner').value=a?.owner||'MF';$('sosx-fAccountId').value=a?.account_id||'';$('sosx-fAccountName').value=a?.account_name||'';$('sosx-fSegment').value=a?.main_segment||'Other';$('sosx-fType').value=a?.risk_type||'Opportunity';$('sosx-fPriority').value=a?.priority||'MITTEL';$('sosx-fStatus').value=a?.status||'PLANNED';(function(){var pv=Number(a?.progress||0);var s=$('sosx-fProgress');if(s)s.value=pv;var lbl=$('sosx-fProgressVal');if(lbl)lbl.textContent=pv;})();$('sosx-fDue').value=a?.due_date||today;$('sosx-fFollow').value=a?.follow_up_date||addDays(today,3);$('sosx-fImpact').value=a?.commercial_impact_eur||0;$('sosx-fReason').value=a?.reason||'';$('sosx-fNext').value=a?.next_step||'';$('sosx-fOutcome').value=a?.outcome||'';$('sosx-fOutcomeNote').value=a?.outcome_note||'';var _ex=window.SAWARO26_R7B?window.SAWARO26_R7B.normalizeExposure(a||{}):{status:'NOT_SET',type:'OTHER',amount_eur:0,probability:0,evidence_level:'UNSET',exposure_id:'',evidence_note:''};$('sosx-fExposureStatus').value=_ex.status||'NOT_SET';$('sosx-fExposureType').value=_ex.type||'OTHER';$('sosx-fExposureAmount').value=_ex.amount_eur||0;$('sosx-fExposureProbability').value=String(_ex.probability||0);$('sosx-fExposureEvidence').value=_ex.evidence_level||'UNSET';$('sosx-fExposureId').value=_ex.exposure_id||'';$('sosx-fExposureNote').value=_ex.evidence_note||'';var _wk=$('sosx-fWeekly');if(_wk)_wk.checked=(a?a.includeInWeekly!==false:true)}function closeEditor(){$('sosx-editor').classList.remove('open')}function saveEditor(){let id=$('sosx-fId').value||nextId();let old=state.actions.find(a=>a.action_id===id);let newDue=$('sosx-fDue').value||today;let oldDue=old?.due_date||'';let basePlan=(old&&oldDue===newDue)?sosxExecutionDate(old):newDue;let a={action_id:id,alert_id:old?.alert_id||'',source_signal_id:old?.source_signal_id||'',parent_action_id:old?.parent_action_id||'',source_action_id:old?.source_action_id||'',account_id:$('sosx-fAccountId').value||$('sosx-fAccountName').value.toUpperCase().replace(/[^A-Z0-9]+/g,'-'),account_name:$('sosx-fAccountName').value||'Scope',main_segment:$('sosx-fSegment').value,title:$('sosx-fTitle').value||'Untitled Action',reason:$('sosx-fReason').value||'Reason to be defined.',next_step:$('sosx-fNext').value||'Define concrete next step.',owner:$('sosx-fOwner').value||'MF',priority:$('sosx-fPriority').value,status:$('sosx-fStatus').value,due_date:newDue,planned_execution_date:basePlan,execution_date_migration_status:old?.execution_date_migration_status||'DIRECT',original_due_date:old?.original_due_date||'',capacity_shifted_from:old?.capacity_shifted_from||'',capacity_shifted_at:old?.capacity_shifted_at||'',created_at:old?.created_at||today,last_touch:today,follow_up_date:$('sosx-fFollow').value||'',commercial_impact_eur:Number($('sosx-fImpact').value||0),risk_type:$('sosx-fType').value,outcome:$('sosx-fOutcome').value,outcome_note:$('sosx-fOutcomeNote').value,exposure:(function(){var st=String($('sosx-fExposureStatus').value||'NOT_SET').toUpperCase(),amount=Number($('sosx-fExposureAmount').value||0),prob=Number($('sosx-fExposureProbability').value||0),ev=String($('sosx-fExposureEvidence').value||'UNSET').toUpperCase(),note=String($('sosx-fExposureNote').value||'').trim(),type=String($('sosx-fExposureType').value||'OTHER').toUpperCase(),eid=String($('sosx-fExposureId').value||old?.exposure?.exposure_id||'').trim();if(st==='NOT_SET'&&!amount&&!note&&!eid)return null;if(!eid&&window.SAWARO26_R7B)eid=window.SAWARO26_R7B.nextExposureId($('sosx-fAccountId').value||$('sosx-fAccountName').value);return{schema:'SAWARO26_EXPOSURE_V1',exposure_id:eid,status:st,type:type,amount_eur:Math.max(0,amount),probability:prob,evidence_level:ev,evidence_note:note,as_of:today,owner:$('sosx-fOwner').value||'MF'};})(),progress:(function(){var st=$('sosx-fStatus').value;var sliderEl=$('sosx-fProgress');var manual=sliderEl?Number(sliderEl.value):NaN;if(st==='DONE')return 100;if(st==='CANCELLED')return 0;if(!isNaN(manual)&&manual>0)return manual;var def={PLANNED:10,IN_PROGRESS:50,WAITING_CUSTOMER:65,WAITING_INTERNAL:65,ESCALATED:75}[st];return def!=null?def:(old?.progress||0);})()};a.includeInWeekly=($('sosx-fWeekly')?$('sosx-fWeekly').checked:(old?old.includeInWeekly!==false:true));if(window.SAWARO26_R7B){var _vx=window.SAWARO26_R7B.normalizeExposure(a);if(_vx.status==='CONFIRMED'&&!_vx.reportable){toast('Exposure CONFIRMED ist unvollständig: '+_vx.issues.join(', '),'err');return;}}if(a.status==='DONE'&&!a.outcome){toast('DONE braucht ein Outcome.');return}var _beforePlan=a.planned_execution_date;if(activeA(a))a.planned_execution_date=sosxCritCascade(a.planned_execution_date,a.priority,id);state.actions=old?state.actions.map(x=>x.action_id===id?a:x):state.actions.concat(a);selectedActionId=a.action_id;selectedDate=sosxExecutionDate(a)||selectedDate;calendarCursor=selectedDate;store('editor-save');closeEditor();requestAnimationFrame(()=>$('sosx-editor').classList.remove('open'));renderAll();toast(a.planned_execution_date!==_beforePlan||a.planned_execution_date!==a.due_date?'Gespeichert · fällig '+a.due_date+' · geplant '+a.planned_execution_date:'Action gespeichert.')}function saveQuickOutcome(){let a=state.actions.find(x=>x.action_id===selectedActionId);if(!a)return;if(!$('sosx-quickOutcome').value){toast('Outcome wählen.');return}a.status='DONE';a.progress=100;a.outcome=$('sosx-quickOutcome').value;a.outcome_note=$('sosx-quickOutcomeNote').value;a.last_touch=today;selectedDate=sosxExecutionDate(a)||today;calendarCursor=selectedDate;store('quick-outcome');showScreen('calendar');toast('Update erfasst und Action Detail geschlossen.')}function createFollowUp(id){let a=state.actions.find(x=>x.action_id===id);if(!a)return;var businessDue=a.follow_up_date||addDays(today,3),planned=sosxCritCascade(businessDue,a.priority,'');state.actions.push({...a,exposure:a.exposure?JSON.parse(JSON.stringify(a.exposure)):null,action_id:nextId(),source_signal_id:'',parent_action_id:a.action_id||'',source_action_id:a.action_id||'',title:'Follow-up · '+a.title,reason:a.outcome_note||a.reason,next_step:'Follow-up durchführen und Ergebnis aktualisieren.',status:'PLANNED',due_date:businessDue,planned_execution_date:planned,execution_date_migration_status:'DIRECT',created_at:today,last_touch:today,follow_up_date:addDays(planned,6),outcome:'',outcome_note:'',progress:0});store('followup-created');renderAll();toast(planned!==businessDue?'Follow-up erstellt · fällig '+businessDue+' · geplant '+planned:'Follow-up erstellt.')}function saveThreadNote(){state.thread_notes[$('sosx-accountSelect').value]=$('sosx-threadNote').value;store('thread-note');toast('Thread Note gespeichert.')}function download(name,text,type='text/plain'){let blob=new Blob([text],{type});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),600)}function reportText(){var el=$('sosx-reportPreview');var t=(el&&(el.innerText||el.textContent))||'';return t.replace(/\n{3,}/g,'\n\n')}function downloadReport(){var n=sosxReportMode==='ccr'?'MF_Customer_Contact_Report':sosxReportMode==='outcome'?'MF_Outcome_Report':sosxReportMode==='monthly'?'MF_Monthly_Summary':'MF_Weekly_Execution_Report';download(n+'_'+today.replaceAll('-','')+'.md',reportPlainText(),'text/markdown')}function exportState(){sosxEnforceCriticalCapacity();store('state-export');download('SAWARO26_SOS_ACTION_STATE_'+today.replaceAll('-','')+'.json',JSON.stringify(state,null,2),'application/json')}function importStateFile(ev){let f=ev.target.files?.[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let s=JSON.parse(r.result);if(!Array.isArray(s.actions))throw Error('bad');state=sawaroJournalAdoptImportedState(s);var moved=sosxEnforceCriticalCapacity();if(!moved)store('state-import');renderAll();toast(moved?('Action State importiert · '+moved+' Action(s) im Werktagsplan neu verteilt'):'Action State importiert.')}catch(e){toast('Import fehlgeschlagen: ungültiges JSON.')}};r.readAsText(f);ev.target.value=''}function ics(d){return String(d||today).replaceAll('-','')}function escIcs(s){return String(s??'').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;')}function exportICS(){let lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//SAWARO26//SOS AAA UI v3//DE'];state.actions.filter(activeA).forEach(a=>{lines.push('BEGIN:VEVENT',`UID:sawaro-${a.action_id}@sawaro26`,`DTSTAMP:${ics(today)}T080000Z`,`DTSTART;VALUE=DATE:${ics(a.due_date)}`,`SUMMARY:${escIcs(a.priority+' · '+a.account_name+' · '+a.title)}`,`DESCRIPTION:${escIcs('SOS mirror only. Master remains Action State. Next: '+a.next_step)}`,'END:VEVENT')});lines.push('END:VCALENDAR');download('SAWARO26_SOS_ACTIONS_MIRROR_'+today.replaceAll('-','')+'.ics',lines.join('\r\n'),'text/calendar')}function toast(msg){const el=document.getElementById('sosx-toast');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2600)}document.addEventListener('keydown',e=>{if(e.key==='Escape')closeEditor()});$('sosx-editor').addEventListener('click',e=>{if(e.target===$('sosx-editor'))closeEditor()});function initSelect(id,vals,blank=false){let el=$(id);if(!el)return;el.innerHTML=(blank?['']:[]).concat(vals).map(v=>`<option value="${esc(v)}">${esc(v||'—')}</option>`).join('')}function init(){iconNav();initSelect('sosx-quickOutcome',outcomes.filter(Boolean));initSelect('sosx-fSegment',segments);initSelect('sosx-fType',riskTypes);initSelect('sosx-fPriority',priorities);initSelect('sosx-fStatus',statuses);initSelect('sosx-fOutcome',outcomes,true);try{SAWARO_BACKUP.init();}catch(e){}renderAll()}if(typeof iconNav==='function'){try{iconNav();}catch(e){}}
+window.SOSX_SAVE_WK_COMMENT=function(wk,val){try{state.weekly_comments=state.weekly_comments||{};state.weekly_comments[wk]=val;store('weekly-comment');}catch(e){}};window.SOSX={getState:function(){return state;},auditCriticalCapacity:function(){var by={};state.actions.filter(function(a){return activeA(a)&&sosxIsCritical(a)}).forEach(function(a){var d=sosxExecutionDate(a);by[d]=(by[d]||0)+1});return{limit:SOSX_CRIT_LIMIT,dateField:'planned_execution_date',businessDateField:'due_date',max:Object.keys(by).reduce(function(m,k){return Math.max(m,by[k])},0),byDate:by,violations:Object.keys(by).filter(function(k){return by[k]>SOSX_CRIT_LIMIT})}},auditHighWorkdays:function(){var by={},weekend=[];state.actions.filter(function(a){return activeA(a)&&sosxIsHigh(a)}).forEach(function(a){var d=sosxExecutionDate(a);by[d]=(by[d]||0)+1;if(!sosxWorkday(d))weekend.push(a.action_id)});return{policy:'SOFT_BALANCE_5_WORKDAYS',dateField:'planned_execution_date',byDate:by,weekendViolations:weekend}},ensureCriticalCapacity:function(){return sosxEnforceCriticalCapacity()},linkBackupFile:function(){return SAWARO_BACKUP.pickBackupFile();},downloadBackup:function(){sosxEnforceCriticalCapacity();store();return SAWARO_BACKUP.manualDownload();},setReportMode:setReportMode,moveReportWeek:sosxWeeklyMoveWeek,resetReportWeek:sosxWeeklyResetWeek,weeklyEventModel:sosxWeeklyEventModel,buildWeeklyEventReport:buildWeeklyEventReport,sosExpectedByAccount:sosExpectedByAccount,sosExpectedTotal:sosExpectedTotal,actionExpectedValue:actionExpectedValue,actionProbability:actionProbability,printReport:printReport,copyReportText:copyReportText,downloadReportText:downloadReportText,reportPlainText:reportPlainText,buildCCRReport:buildCCRReport,buildOutcomeReport:buildOutcomeReport,buildMonthlySummary:buildMonthlySummary,cleanExternalReportText:cleanExternalReportText,actionCard:actionCard,visualClass:sosxVisualClass,signalLabel:sosxSignalLabel,signalChip:sosxSignalChip,calendarTask:sosxCalendarTask,sfTaskUrl:sfTaskUrl,sfTaskSubject:sfTaskSubject,sfTaskDescription:sfTaskDescription,sfEventUrl:sfEventUrl,activeA:activeA,addDays:addDays,buildLiveSignals:buildLiveSignals,chip:chip,closeEditor:closeEditor,cls:cls,convertSignal:convertSignal,resolveSignalAction:resolveSignalAction,openSignalAction:openSignalAction,showSignalInCalendar:showSignalInCalendar,createFollowUp:createFollowUp,dateObj:dateObj,dayLabel:dayLabel,download:download,downloadReport:downloadReport,dueWeek:dueWeek,editSignal:editSignal,empty:empty,emptySmall:emptySmall,enterApp:enterApp,esc:esc,escIcs:escIcs,eur:eur,exportICS:exportICS,exportState:exportState,iconNav:iconNav,ics:ics,importStateFile:importStateFile,init:init,initSelect:initSelect,iso:iso,labelFor:labelFor,late:late,load:load,monthLabel:monthLabel,moveCalendar:moveCalendar,nextId:nextId,openEditor:openEditor,renderAccount:renderAccount,renderActionDetail:renderActionDetail,renderAll:renderAll,renderCalendar:renderCalendar,renderDashboard:renderDashboard,renderInbox:renderInbox,renderKPIs:renderKPIs,renderReport:renderReport,renderSOS:renderSOS,renderWhere:renderWhere,reportText:reportText,sameMonth:sameMonth,saveEditor:saveEditor,saveQuickOutcome:saveQuickOutcome,saveThreadNote:saveThreadNote,selectAction:selectAction,selectCalendarDate:selectCalendarDate,showScreen:showScreen,sortA:sortA,store:store,eventJournal:sawaroJournalEvents,eventsForAction:sawaroJournalEvents,recordLifecycleEvent:sawaroJournalRecord,auditEventJournal:sawaroJournalAudit,exportEventJournal:sawaroJournalExport,tasksOn:tasksOn,toast:toast,executionDate:sosxExecutionDate,businessDate:sosxBusinessDate,migrateExecutionDates:sosxMigrateExecutionDates,dateContract:SOSX_DATE_CONTRACT};
 
 
+/* R8.2.8.2 IDENTITY/DEDUP/CALENDAR REFERENCE CANDIDATE
+   BASE: SAWARO26_COMMANDER_v180_8_1_R8_2_8_1_SOS_BOOTSTRAP_ORDER_HOTFIX(1).html
+   BASE SHA-256: 54f4e34c576abc29047573b544bd4fb0aa6e82469d7e3e3b4bcbc5406269173c
+   SCOPE: resolver + Intake status/reference + convert write guard + existing-action/calendar navigation only.
+   PROTECTED: Truth, Forecast, R7A/R7B, priority/materiality, CAP4/date contract, reports, Salesforce, storage keys.
+*/
 /* SAWARO_RECOVERY_MARKER ID:R4_SOS_MASTER_CONTRACT FUTURE_MODULE:domain/sos/master-contract */
 window.SAWARO26_SOS_MASTER=(function(){
   'use strict';
@@ -11559,7 +11820,7 @@ window.SOSX.migrateLegacy=function(){
       main_segment:'General Industry',title:String(a.title||'Action'),
       reason:String(a.note||''),next_step:'Migriert aus Alt-SOS. Naechsten Schritt definieren.',
       owner:String(a.owner||'MF'),priority:(typeof a.priority==='number'?PMAP(a.priority):(a.priority||'HOCH')),
-      status:SMAP(a.status),due_date:String(a.due||td),created_at:td,last_touch:td,
+      status:SMAP(a.status),due_date:String(a.due||td),planned_execution_date:String(a.due||td),execution_date_migration_status:'DIRECT',created_at:td,last_touch:td,
       follow_up_date:'',commercial_impact_eur:0,risk_type:'Revenue Risk',outcome:'',outcome_note:'',progress:a.status==='Done'?100:0
     }});
     try{sosxEnsureCriticalCapacity(mapped)}catch(e){}
@@ -11568,7 +11829,7 @@ window.SOSX.migrateLegacy=function(){
     return{migrated:true,actions:mapped.length,source:'sawaro26_native_sos_v1'};
   }catch(e){console.warn('SOSX migrateLegacy',e);return{migrated:false,error:String(e&&e.message||e)};}
 };
-window.SOSX.open=function(){try{window.SOSX.migrateLegacy()}catch(e){}var o=document.getElementById('sosx-overlay');if(!o)return;var app=document.getElementById('sc-app');if(app&&app.classList.contains('active'))window.__sosx_return_screen='sc-app';o.classList.add('open');var ex=document.getElementById('sosx-exit');if(ex)ex.classList.add('show');document.body.style.overflow='hidden';try{var moved=sosxEnforceCriticalCapacity();var first=!window.__sosx_inited;if(first){if(typeof init==='function')init();window.__sosx_inited=true}var g=document.getElementById('sosx-gate');if(g)g.classList.add('hide');var sa=document.getElementById('sosx-app');if(sa)sa.classList.remove('hide');if(!first)renderAll();try{hydrateIcons(o)}catch(e){}if(moved)toast(moved+' kritische Action(s) automatisch verteilt · max 4/Werktag')}catch(e){console.warn('SOSX open',e)}};
+window.SOSX.open=function(){try{window.SOSX.migrateLegacy()}catch(e){}var o=document.getElementById('sosx-overlay');if(!o)return;var app=document.getElementById('sc-app');if(app&&app.classList.contains('active'))window.__sosx_return_screen='sc-app';o.classList.add('open');var ex=document.getElementById('sosx-exit');if(ex)ex.classList.add('show');document.body.style.overflow='hidden';try{var moved=sosxEnforceCriticalCapacity();var first=!window.__sosx_inited;if(first){if(typeof init==='function')init();window.__sosx_inited=true}var g=document.getElementById('sosx-gate');if(g)g.classList.add('hide');var sa=document.getElementById('sosx-app');if(sa)sa.classList.remove('hide');if(!first)renderAll();try{hydrateIcons(o)}catch(e){}if(moved)toast(moved+' Action(s) im Werktagsplan automatisch neu verteilt')}catch(e){console.warn('SOSX open',e)}};
 window.SOSX.close=function(){var o=document.getElementById('sosx-overlay');if(!o)return;o.classList.remove('open');var ex=document.getElementById('sosx-exit');if(ex)ex.classList.remove('show');document.body.style.overflow='';var app=document.getElementById('sc-app'),start=document.getElementById('sc-start');if(app)app.classList.add('active');if(start)start.classList.remove('active');try{if(typeof renderHub==='function')renderHub()}catch(e){}};
 
 
@@ -11629,6 +11890,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       priority:val('sosx-fPriority')||((old&&old.priority)||'MITTEL'),
       status:safeStatus,
       due_date:val('sosx-fDue')||((old&&old.due_date)||new Date().toISOString().slice(0,10)),
+      planned_execution_date:(function(){var nd=val('sosx-fDue')||((old&&old.due_date)||new Date().toISOString().slice(0,10));return old&&String(old.due_date||'')===String(nd)?String(old.planned_execution_date||old.due_date||nd):String(nd)})(),
+      execution_date_migration_status:(old&&old.execution_date_migration_status)||'DIRECT',
       original_due_date:(old&&old.original_due_date)||'',
       capacity_shifted_from:(old&&old.capacity_shifted_from)||'',
       capacity_shifted_at:(old&&old.capacity_shifted_at)||'',
@@ -11883,24 +12146,25 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
 
   // ---- country strategic direction (Stoßrichtung) ----
-  const SR_COUNTRY_STRAT = {
-    AT:{ headline:'Kernmarkt — Erosion auf wenige Konten konzentriert',
-      points:[
-        'ENGEL zurückgewinnen: Betreuung wiederherstellen, Rahmen-Thema klären (größter Einzelhebel).',
-        'GAUTSCHI als Stahl-Wachstumsanker absichern und ausbauen.',
-        'Projektkonten (ANDRITZ, SIEMENS) antizyklisch über frühe Pipeline führen.'
-      ]},
-    HR:{ headline:'Wachstumsmarkt — niedrige Basis, hohe Dynamik',
-      points:[
-        'Wachstumskonten (ZRE Katowice u.a.) zu Rahmenvereinbarungen verdichten.',
-        'Hydro- und Stahlsegment über regionale Infrastruktur-Investitionen adressieren.'
-      ]},
-    SI:{ headline:'Wachstumsmarkt — Hydro-getrieben, über Plan möglich',
-      points:[
-        'LITOSTROJ-Abrufe (Auftragsbestand > Zielwert) terminsicher fakturieren.',
-        'Slowenien als Hydro-Referenz und Türöffner für die Region nutzen.'
-      ]}
-  };
+  // R8.2.3: country narratives are scope-derived. No production account name may be emitted
+  // unless that account is actually present in the current report scope.
+  function srCountryStrategy(c, accts){
+    const scoped=(accts||[]).filter(x=>x.country===c.c);
+    const movers=scoped.map(x=>({x, mv:x.priorVisible>=5000?Number(x.delta||0):null})).filter(m=>m.mv!==null);
+    const neg=movers.filter(m=>m.mv<-15000).sort((a,b)=>a.mv-b.mv)[0]||null;
+    const pos=movers.filter(m=>m.mv>15000).sort((a,b)=>b.mv-a.mv)[0]||null;
+    const gap=Math.max(0,Number(c.tgt||0)-Number(c.vis||0));
+    const cov=Number(c.tgt||0)>0?Number(c.vis||0)/Number(c.tgt||0):null;
+    const headline=Number(c.tgt||0)>0
+      ? `Aktueller Scope · AOP-Coverage ${cov==null?'—':Math.round(cov*100)+' %'} · offene Lücke ${eur(gap)}`
+      : 'Aktueller Scope · kein sauber zugeordnetes AOP-Target';
+    const points=[];
+    if(neg) points.push(`${neg.x.a.name}: negative Same-Cutoff-Bewegung ${eur(neg.mv)} — Ursache validieren und konkrete Recovery-Maßnahme terminieren.`);
+    if(pos) points.push(`${pos.x.a.name}: positive Same-Cutoff-Bewegung +${eur(pos.mv)} — Momentum absichern und belastbare Folgechance qualifizieren.`);
+    if(Number(c.ob||0)>0) points.push(`Offenen Auftragsbestand ${eur(c.ob)} terminlich absichern und sauber in Fakturierung überführen.`);
+    if(!points.length) points.push('Keine material dominante Same-Cutoff-Bewegung im aktuellen Länderscope; Account-Prioritäten aus dem geladenen Scope ableiten.');
+    return {headline,points};
+  }
 
 
   // ============================================================
@@ -11913,6 +12177,19 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     if (!model.obSeparated) issues.push('Offener Auftragsbestand wird nicht getrennt vom fakturierten Umsatz ausgewiesen.');
     if (model.negativeWithoutAction>0) issues.push(model.negativeWithoutAction+' negative Top-Abweichung(en) ohne Gegenmaßnahme.');
     return { ok:issues.length===0, issues };
+  }
+
+  // ============================================================
+  // R8.2.4 · STRATEGIC REACTIVATION SEMANTICS
+  // Consume the canonical snapshot-benchmark status. Do not manufacture a
+  // negative year-shift when the account has no comparable prior cutoff.
+  // ============================================================
+  function srIsReactivation(x){
+    return !!(x && x.b && x.b.status==='NEW_OR_REACTIVATED');
+  }
+  function srStrategicMovement(x){
+    if(srIsReactivation(x)) return null;
+    return x && x.priorVisible>=5000 ? Number(x.delta||0) : Number((x&&x.brk&&x.brk.delta25)||0);
   }
 
   // ============================================================
@@ -11944,10 +12221,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
                y25, forecast:Number(fc.forecast||0), brk };
     });
 
-    // negative / positive movers by same-cutoff delta (fallback to full-year delta25 if no prior cutoff)
-    const scored=accts.map(x=>({x, mv: (x.priorVisible>=5000? x.delta : x.brk.delta25)}));
+    // negative / positive movers by same-cutoff delta. Legacy annual fallback remains
+    // only for non-reactivation accounts without a comparable cutoff. Reactivations
+    // are carried separately so they cannot become a fabricated negative movement.
+    const scored=accts.map(x=>({x, mv:srStrategicMovement(x)})).filter(s=>s.mv!==null);
     const negatives=scored.filter(s=>s.mv<-15000).sort((a,b)=>a.mv-b.mv).slice(0,6).map(s=>s.x);
     const positives=scored.filter(s=>s.mv>15000).sort((a,b)=>b.mv-a.mv).slice(0,6).map(s=>s.x);
+    const reactivations=accts.filter(srIsReactivation).sort((a,b)=>b.visible-a.visible).slice(0,6);
 
     // country aggregation
     const byC={};
@@ -11958,14 +12238,14 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     const bySeg={};
     accts.forEach(x=>{ const s=x.seg; (bySeg[s]||(bySeg[s]={s,target:0,stretch:0})); bySeg[s].target+=x.target; bySeg[s].stretch+=x.stretch; });
 
-    const recovery = negatives.reduce((s,x)=>s+Math.abs(Math.min(0,(x.priorVisible>=5000?x.delta:x.brk.delta25))),0);
-    const momentum = positives.reduce((s,x)=>s+Math.max(0,(x.priorVisible>=5000?x.delta:x.brk.delta25)),0);
+    const recovery = negatives.reduce((s,x)=>s+Math.abs(Math.min(0,Number(srStrategicMovement(x)||0))),0);
+    const momentum = positives.reduce((s,x)=>s+Math.max(0,Number(srStrategicMovement(x)||0)),0);
     const visible = curVis;
     const aopGap = Math.max(0, tgt - visible);
     const pipeline = Math.max(0, aopGap - recovery - momentum);
     const stretchGap = Math.max(0, stretch - tgt);
 
-    return { data, accts, negatives, positives, byC, bySeg,
+    return { data, accts, negatives, positives, reactivations, byC, bySeg,
              curVis, priorVis, booked, openOB, tgt, stretch, r25Sum,
              visible, recovery, momentum, pipeline, aopGap, stretchGap,
              deltaSC: curVis-priorVis, pctSC: priorVis>0?(curVis/priorVis-1):null };
@@ -12016,13 +12296,16 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
   function acctCard(x, positive){
     const b=x.b, brk=x.brk;
-    const mv = (x.priorVisible>=5000? x.delta : brk.delta25);
-    const cls=positive?'pos':'';
+    const reactivation=srIsReactivation(x);
+    const mv = srStrategicMovement(x);
+    const cls=(positive||reactivation)?'pos':'';
     const narr = srLookupNarrative(x.a);
 
     // --- BREAK / CONTEXT block ---
     let breakHtml;
-    if (narr && (narr.chain||narr.rootCause)){
+    if (reactivation){
+      breakHtml = '<div class="sr-break pos"><b>Reaktivierung:</b> Kein belastbarer Vorjahres-Cutoff. FY26 zeigt '+eur(x.visible)+' aktuelle Sichtbarkeit (davon OB '+eur(x.openOB)+'). Ein negativer Same-Cutoff-Bruch ist daraus nicht ableitbar.</div>';
+    } else if (narr && (narr.chain||narr.rootCause)){
       const by = narr.breakYear ? (narr.breakYear+' · ') : '';
       const chain = (narr.chain&&narr.chain.length)
         ? '<ol class="sr-chain">'+narr.chain.map(c=>'<li>'+esc(c)+'</li>').join('')+'</ol>' : '';
@@ -12037,7 +12320,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
     // --- RECOVERY / LEVER block ---
     let recHtml;
-    if (narr && narr.recovery && narr.recovery.length){
+    if (reactivation){
+      recHtml = '<div class="sr-rec"><h5>Hebel</h5><p>Reaktivierung absichern: aktuelle Aufträge und Wiederholbedarf validieren, Folgepotenzial qualifizieren und die neue Sichtbarkeit nicht als gesicherten Vorjahrestrend interpretieren. <span class="sr-owner">→ Vertrieb · nächster Kundenkontakt</span></p></div>';
+    } else if (narr && narr.recovery && narr.recovery.length){
       const conf = narr.confidence ? '<span class="sr-conf '+esc(narr.confidence)+'">'+({high:'hohe',medium:'mittlere',low:'geringe'}[narr.confidence]||esc(narr.confidence))+' Confidence</span>' : '';
       const supp = narr.mgmtSupport ? '<span class="sr-supp">Management-Support nötig</span>' : '';
       const steps = '<ol class="sr-steps">'+narr.recovery.map(r=>'<li>'+esc(r.step)+'<span class="sr-owner">→ '+esc(r.owner)+' · '+esc(r.timing)+'</span></li>').join('')+'</ol>';
@@ -12054,7 +12339,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       <div class="sr-acc-grid">
         <div><span>Vorjahr YTD</span><b>${eur(x.priorVisible)}</b></div>
         <div><span>FY26 sichtbar</span><b>${eur(x.visible)}</b></div>
-        <div><span>Δ same-cutoff</span><b class="${mv<0?'neg':'pos'}">${(mv>=0?'+':'')+eur(mv)}</b></div>
+        <div><span>${reactivation?'Same-Cutoff':'Δ same-cutoff'}</span><b class="${reactivation?'':(mv<0?'neg':'pos')}">${reactivation?'nicht vergleichbar':((mv>=0?'+':'')+eur(mv))}</b></div>
         <div><span>AOP-Target</span><b>${eur(x.target)}</b></div>
       </div>
       ${breakHtml}
@@ -12062,10 +12347,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     </div>`;
   }
 
-  function countryBlock(c){
+  function countryBlock(c, accts){
     const dy = c.y25-c.y24, pct = c.y24>0?(c.y25/c.y24-1):null;
     const name={AT:'Österreich',HR:'Kroatien',SI:'Slowenien'}[c.c]||c.c;
-    const strat = SR_COUNTRY_STRAT[c.c];
+    const strat = srCountryStrategy(c, accts);
     const stratHtml = strat ? '<div class="sr-strat"><div class="sr-strat-head">'+esc(strat.headline)+'</div><ul>'+strat.points.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul></div>' : '';
     return `<div class="sr-acc">
       <div class="sr-acc-head"><div><h4>${esc(name)}</h4><div class="sr-seg2">${c.c}</div></div></div>
@@ -12104,8 +12389,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     opt = opt || {snapshot:true,waterfall:true,countries:true,negative:true,positive:true,stretch:true,internal:false};
     const snapHtml = _snapshotSummary(m.data);
     const negCards = m.negatives.map(x=>acctCard(x,false)).join('') || '<p>Keine wesentlichen negativen Abweichungen.</p>';
-    const posCards = m.positives.map(x=>acctCard(x,true)).join('') || '<p>Keine wesentlichen Momentum-Konten.</p>';
-    const countries = Object.values(m.byC).filter(c=>['AT','HR','SI'].includes(c.c)).sort((a,b)=>b.y25-a.y25).map(countryBlock).join('');
+    const posCards = m.positives.map(x=>acctCard(x,true)).concat((m.reactivations||[]).map(x=>acctCard(x,true))).join('') || '<p>Keine wesentlichen Momentum-Konten.</p>';
+    const countries = Object.values(m.byC).filter(c=>['AT','HR','SI'].includes(c.c)).sort((a,b)=>b.y25-a.y25).map(c=>countryBlock(c,m.accts)).join('');
     const segRows=Object.values(m.bySeg).map(s=>({...s,head:s.stretch-s.target})).filter(s=>s.head>200).sort((a,b)=>b.head-a.head).slice(0,8);
     const segTable=segRows.map(s=>`<tr><td>${esc(s.s)}</td><td class="sr-num">${eur(s.target)}</td><td class="sr-num">${eur(s.stretch)}</td><td class="sr-num pos">+${eur(s.head)}</td></tr>`).join('');
 
@@ -12173,7 +12458,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         <p class="sr-lead">Managementfähige Standortbestimmung für ${esc(scopeName)} auf Basis aktueller Sichtbarkeit (YTD + offener Auftragsbestand), mit Same-Cutoff-Vergleich, Brückenplan zu AOP und Stretched Target sowie konkreten Recovery-Maßnahmen.</p>
       </section>
       ${sections.join('\n')}
-      <div class="sr-footer">Vertraulich · Management-Information · FY26 · Werte EUR · Vergleich Same-Cutoff (YTD + offener Auftragsbestand); Full-Year nur als Referenz.</div>
+      <div class="sr-footer">Vertraulich · Management-Information · FY26 · Werte EUR · Vergleich Same-Cutoff (YTD + offener Auftragsbestand); Full-Year nur als Referenz. · Build ${esc((window.SAWARO_BUILD&&window.SAWARO_BUILD.version)||'UNKNOWN')}</div>
     </div>`;
   }
 
@@ -13545,7 +13830,8 @@ var GGB_BATCH1=[{"k":"200003.0","n":"AICHELIN GES.M.B.H.","c":"AT","ct":"MÖDLIN
   -webkit-backdrop-filter:blur(14px) saturate(150%);
   backdrop-filter:blur(14px) saturate(150%);
 }
-.start-version-badge b{color:var(--cmd134-lime);font-weight:900}
+.start-version-badge b{display:block;color:var(--cmd134-lime);font-weight:900;font-size:13px;letter-spacing:.04em}
+.start-version-meta{margin-top:2px;color:rgba(210,255,185,.62);font-size:8.8px;letter-spacing:.06em}
 .start-owner-line{
   margin-top:7px;
   color:rgba(227,231,237,.42);
@@ -13886,11 +14172,14 @@ var GGB_BATCH1=[{"k":"200003.0","n":"AICHELIN GES.M.B.H.","c":"AT","ct":"MÖDLIN
 <script id="sawaro-v134-commandroom-js">
 (function(){
   'use strict';
-  var BUILD='v167';
-  var BUILD_LABEL='SAWARO26 COMMANDER D26 · v167 CANONICAL TRUTH CONTRACT';
-  var BUILD_DATE='2026-06-08';
+  var BUILD_META=window.SAWARO_BUILD||{};
+  var BUILD=BUILD_META.version||'UNKNOWN';
+  var BUILD_LABEL=window.SAWARO_BUILD_LABEL||BUILD;
+  var BUILD_DATE=BUILD_META.buildDate||'';
+  var BUILD_STATUS=BUILD_META.status||'UNKNOWN';
+  var BUILD_RECOVERY=BUILD_META.recovery||'';
   var OWNER='Ing. Manfred Foissner';
-  var PATCH_NAME='Canonical Truth Contract';
+  var PATCH_NAME=BUILD_META.title||'Build Identity';
 
   function byId(id){return document.getElementById(id)}
   function q(sel,root){return (root||document).querySelector(sel)}
@@ -13999,7 +14288,7 @@ var GGB_BATCH1=[{"k":"200003.0","n":"AICHELIN GES.M.B.H.","c":"AT","ct":"MÖDLIN
         '<div class="cmd134-eyebrow"><span class="cmd134-pulse"></span>Territory Command · 3 Sekunden Lagebild</div>'+
         '<div class="cmd134-hero-row"><div><h2>Was ist kritisch, warum, und was ist heute zu tun?</h2>'+
         '<p>Der Einstieg zeigt nur die Entscheidungswerte: negative Forecastbewegung, Sichtbarkeit 2026, Forecast/Gap, kritische Accounts und fällige Actions. Monetäre Risk Exposure bleibt bis R7 gesperrt.</p></div>'+
-        '<div class="cmd134-stamp">Build <b>'+BUILD+'</b>'+BUILD_DATE+' · '+esc(OWNER)+'</div></div>'+
+        '<div class="cmd134-stamp">Build <b>'+esc(BUILD)+'</b>'+esc(BUILD_STATUS)+' · '+esc(BUILD_DATE)+' · '+esc(OWNER)+'</div></div>'+
       '</section>'+
       '<section class="cmd134-kpis">'+
         kpiCard('radar',risk>0?'critical':'','Negative Forecast Movement',loaded?money(risk):'—',loaded?('kein Exposure · '+d.totals.defend+' DEFEND · '+d.totals.check+' CHECK · '+d.totals.watch+' WATCH'):'Importdaten laden', [d.totals.watch,d.totals.check,d.totals.defend,risk])+
@@ -14017,7 +14306,7 @@ var GGB_BATCH1=[{"k":"200003.0","n":"AICHELIN GES.M.B.H.","c":"AT","ct":"MÖDLIN
             '<div class="cmd134-today">'+(d.dueToday.length?d.dueToday.slice(0,3).map(actionHTML).join(''):'<div class="cmd134-empty">Keine heute fälligen SOS-Actions. RADAR kann neue Proposals in den Kalender übernehmen.</div>')+'</div>'+
             '<div class="cmd134-cta-row"><button class="cmd134-btn" type="button" data-v134-trigger="#btn-sos-modal">SOS Kalender öffnen</button><button class="cmd134-btn" type="button" data-v88-mode="radar">RADAR Intake</button></div>'+
           '</div>'+
-          '<div class="cmd134-panel"><div class="lbl">Data Status</div><h3 style="margin:5px 0 7px;font-size:15px;color:#f7fff4">'+(loaded?d.live.length+' operative Accounts geladen':'Noch keine operativen Accountdaten geladen')+'</h3><div class="cmd134-empty" style="min-height:auto;place-items:start;text-align:left">Build '+BUILD+' · '+PATCH_NAME+' · Startscreen-Version sichtbar · Truth/Forecast/Report unverändert.</div></div>'+
+          '<div class="cmd134-panel"><div class="lbl">Data Status</div><h3 style="margin:5px 0 7px;font-size:15px;color:#f7fff4">'+(loaded?d.live.length+' operative Accounts geladen':'Noch keine operativen Accountdaten geladen')+'</h3><div class="cmd134-empty" style="min-height:auto;place-items:start;text-align:left">Build '+esc(BUILD)+' · '+esc(BUILD_RECOVERY)+' · '+esc(BUILD_STATUS)+' · '+esc(PATCH_NAME)+' · Truth/Forecast/Report unverändert.</div></div>'+
         '</div>'+
       '</section>'+
       '<section class="cmd134-workgrid">'+
@@ -14035,7 +14324,7 @@ var GGB_BATCH1=[{"k":"200003.0","n":"AICHELIN GES.M.B.H.","c":"AT","ct":"MÖDLIN
     var div=document.createElement('div');
     div.id='start-version-badge';
     div.className='start-version-badge';
-    div.innerHTML='<b>'+BUILD+'</b> · Command Entry Hardening · '+BUILD_DATE+'<div class="start-owner-line">© '+esc(OWNER)+' · SAWARO26</div>';
+    div.innerHTML='<b>'+esc(BUILD)+' · '+esc(BUILD_STATUS)+'</b><div class="start-version-meta">'+esc(BUILD_RECOVERY)+' · '+esc(PATCH_NAME)+' · '+esc(BUILD_DATE)+'</div><div class="start-owner-line">© '+esc(OWNER)+' · SAWARO26</div>';
     card.appendChild(div);
   }
   function handleClicks(){
@@ -14099,6 +14388,7 @@ var GGB_BATCH1=[{"k":"200003.0","n":"AICHELIN GES.M.B.H.","c":"AT","ct":"MÖDLIN
   var V='v146', NS='SAWARO26_EXPORT';
   function byId(id){return document.getElementById(id)}
   function safeText(v){return v==null?'':String(v)}
+  function releaseVersion(){return (window.SAWARO_BUILD&&window.SAWARO_BUILD.version)||'UNKNOWN'}
   function num(v){var n=Number(v);return Number.isFinite(n)?n:0}
   function dateStamp(){var d=new Date(),p=function(n){return String(n).padStart(2,'0')};return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())}
   function isoNow(){return new Date().toISOString()}
@@ -14119,14 +14409,14 @@ var GGB_BATCH1=[{"k":"200003.0","n":"AICHELIN GES.M.B.H.","c":"AT","ct":"MÖDLIN
   function customerRows(mode){var accs=scopeAccounts(mode),tm=targetMap(accs),stamp=isoNow(),scope=scopeLabel(mode);return accs.map(function(a){var fc=forecastOf(a),st=statusOf(a),tr=tm.get(safeText(a.id||a.name))||{};return{exportedAt:stamp,scope:scope,id:safeText(a.id),name:safeText(a.name),country:safeText(a.country),plz:safeText(a.plz||a.postalCode),city:safeText(a.city),segment:safeText(a.segment),origin:(typeof getAccountOrigin==='function'?getAccountOrigin(a):safeText(a.origin)),source:(typeof getAccountSource==='function'?getAccountSource(a):safeText(a.source)),status:safeText(st.status),statusReason:safeText(st.reason),risk:num(a.risk),businessType:safeText(fc.businessType),revenue2024:num((a.rev||[])[10]),revenue2025:num(fc.y25),turnoverYTD26:num(fc.to26),openOrderbook26:num(fc.obOpen26),visible2026:num(fc.ob26),forecast2026:num(fc.forecast),pessimistic2026:num(fc.pessimistic),optimistic2026:num(fc.optimistic),deltaVs2025:num(fc.delta25),deltaPctVs2025:fc.deltaPct25==null?'':num(fc.deltaPct25),openGap:num(fc.openGap),coverage:num(fc.coverage),exposedRevenue:exposedOf(a,fc),target2026:num(tr.target),stretch2026:num(tr.stretch),activeTarget2026:num(tr.activeTarget),targetGap:num(tr.gap),articles:(a.articles||[]).length,contacts:(a.contacts||[]).length,competitorPotential:num(a.competitorPotentialEur),excludeForecast:!!(a.excludeFromForecast||a.revenueModelExcluded)}})}
   function colsArticle(){var c=[['exportedAt','Exported At','date',145],['scope','Scope','text',145],['accountId','Account ID','text',85],['customer','Customer','text',210],['country','Country','text',65],['segment','Segment','text',135],['article','Article No.','text',105],['description','Description / Dimensions','text',220],['material','Material','text',110],['customerPart','Customer Part No.','text',115],['supplierPart','Supplier Part No.','text',115]];var yrs=['2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'];yrs.forEach(function(y,i){c.push(['rev'+i,'Revenue '+y,'money',85])});return c.concat([['turnoverYTD26','Turnover YTD 2026','money',110],['openOrderbook26','Open OB 2026','money',100],['visible2026','Visible 2026','money',95],['reference','Reference','money',90],['delta','Delta vs Reference','money',105],['qty2025','Qty 2025','integer',75],['turnoverYTD26Qty','YTD Qty 2026','integer',85],['openOrderbook26Qty','Open OB Qty 2026','integer',95],['visibleQty2026','Visible Qty 2026','integer',95],['totalRevenue','Historical Revenue Total','money',120],['totalQty','Historical Qty Total','integer',105],['activeYears','Active Years','integer',75],['lastYear','Last Revenue Year','text',90],['signal','Signal / Hint','text',260]])}
   function articleRows(mode){var accs=scopeAccounts(mode),stamp=isoNow(),scope=scopeLabel(mode),out=[];accs.forEach(function(a){(a.articles||[]).forEach(function(x){var r={exportedAt:stamp,scope:scope,accountId:safeText(a.id),customer:safeText(a.name),country:safeText(a.country),segment:safeText(a.segment),article:safeText(x.art),description:safeText(x.dimensions||x.name),material:safeText(x.material),customerPart:safeText(x.customerPart),supplierPart:safeText(x.supplierPart)};(x.rev||[]).slice(0,12).forEach(function(v,i){r['rev'+i]=num(v)});r.turnoverYTD26=num(x.turnoverYTD26);r.openOrderbook26=num(x.orderbookOpen26);r.visible2026=num(x.ob26!=null?x.ob26:(num(x.turnoverYTD26)+num(x.orderbookOpen26)));r.reference=num(x.ref);r.delta=num(x.delta);r.qty2025=num(x.qty25!=null?x.qty25:(x.qtySeries||[])[11]);r.turnoverYTD26Qty=num(x.turnoverYTD26Qty);r.openOrderbook26Qty=num(x.orderbookOpen26Qty);r.visibleQty2026=num(x.ob26Qty!=null?x.ob26Qty:(num(x.turnoverYTD26Qty)+num(x.orderbookOpen26Qty)));r.totalRevenue=num(x.totalRev||(x.rev||[]).reduce(function(s,v){return s+num(v)},0));r.totalQty=num(x.totalQty||(x.qtySeries||[]).reduce(function(s,v){return s+num(v)},0));r.activeYears=num(x.activeYears||(x.rev||[]).filter(function(v){return num(v)>0}).length);r.lastYear=safeText(x.lastYear);r.signal=safeText(x.hint);out.push(r)})});return out}
-  function actionCols(){return[['actionId','Action ID','text',110],['accountId','Account ID','text',85],['account','Account','text',190],['segment','Segment','text',130],['title','Task Subject','text',220],['reason','Reason / Comments','text',260],['nextStep','Next Step','text',260],['owner','Owner','text',70],['priority','Priority','text',75],['salesforcePriority','Salesforce Priority','text',90],['status','Status','text',100],['salesforceStatus','Salesforce Status','text',100],['dueDate','Due Date','date',85],['followUpDate','Follow-up Date','date',90],['riskType','Type','text',110],['commercialImpact','Commercial Impact','money',105],['progress','Progress %','percent',80],['outcome','Outcome','text',110],['outcomeNote','Outcome Note','text',240],['includeInWeekly','Include in Weekly','boolean',90]]}
+  function actionCols(){return[['actionId','Action ID','text',110],['accountId','Account ID','text',85],['account','Account','text',190],['segment','Segment','text',130],['title','Task Subject','text',220],['reason','Reason / Comments','text',260],['nextStep','Next Step','text',260],['owner','Owner','text',70],['priority','Priority','text',75],['salesforcePriority','Salesforce Priority','text',90],['status','Status','text',100],['salesforceStatus','Salesforce Status','text',100],['dueDate','Due Date','date',85],['plannedExecutionDate','Planned Execution','date',95],['followUpDate','Follow-up Date','date',90],['riskType','Type','text',110],['commercialImpact','Commercial Impact','money',105],['progress','Progress %','percent',80],['outcome','Outcome','text',110],['outcomeNote','Outcome Note','text',240],['includeInWeekly','Include in Weekly','boolean',90]]}
   function sfPriority(p){p=safeText(p).toUpperCase();return p==='KRITISCH'||p==='HOCH'?'High':'Normal'}
   function sfStatus(s){s=safeText(s).toUpperCase();if(s==='DONE')return'Completed';if(s==='IN_PROGRESS'||s.indexOf('WAITING')===0||s==='ESCALATED')return'In Progress';return'Not Started'}
-  function actionRows(activeOnly){var s=getSOSState(),arr=(s.actions||[]).filter(function(a){return activeOnly?activeAction(a):true});return arr.map(function(a){return{actionId:safeText(a.action_id),accountId:safeText(a.account_id),account:safeText(a.account_name),segment:safeText(a.main_segment),title:safeText(a.title),reason:safeText(a.reason),nextStep:safeText(a.next_step),owner:safeText(a.owner),priority:safeText(a.priority),salesforcePriority:sfPriority(a.priority),status:safeText(a.status),salesforceStatus:sfStatus(a.status),dueDate:safeText(a.due_date),followUpDate:safeText(a.follow_up_date),riskType:safeText(a.risk_type),commercialImpact:num(a.commercial_impact_eur),progress:num(a.progress)/100,outcome:safeText(a.outcome),outcomeNote:safeText(a.outcome_note),includeInWeekly:a.includeInWeekly!==false}})}
+  function actionRows(activeOnly){var s=getSOSState(),arr=(s.actions||[]).filter(function(a){return activeOnly?activeAction(a):true});return arr.map(function(a){return{actionId:safeText(a.action_id),accountId:safeText(a.account_id),account:safeText(a.account_name),segment:safeText(a.main_segment),title:safeText(a.title),reason:safeText(a.reason),nextStep:safeText(a.next_step),owner:safeText(a.owner),priority:safeText(a.priority),salesforcePriority:sfPriority(a.priority),status:safeText(a.status),salesforceStatus:sfStatus(a.status),dueDate:safeText(a.due_date),plannedExecutionDate:safeText(a.planned_execution_date||a.due_date),followUpDate:safeText(a.follow_up_date),riskType:safeText(a.risk_type),commercialImpact:num(a.commercial_impact_eur),progress:num(a.progress)/100,outcome:safeText(a.outcome),outcomeNote:safeText(a.outcome_note),includeInWeekly:a.includeInWeekly!==false}})}
   function groupRows(accounts,key){var m=new Map();accounts.forEach(function(a){var k=safeText(a[key]||'—'),fc=forecastOf(a),st=statusOf(a),o=m.get(k)||{group:k,accounts:0,revenue2025:0,visible2026:0,forecast2026:0,deltaVs2025:0,exposedRevenue:0,riskAccounts:0};o.accounts++;o.revenue2025+=num(fc.y25);o.visible2026+=num(fc.ob26);o.forecast2026+=num(fc.forecast);o.deltaVs2025+=num(fc.delta25);o.exposedRevenue+=exposedOf(a,fc);if(/risk|defend/i.test(safeText(st.status)))o.riskAccounts++;m.set(k,o)});return Array.from(m.values()).sort(function(a,b){return b.revenue2025-a.revenue2025})}
   function groupCols(label){return[['group',label,'text',180],['accounts','Accounts','integer',70],['revenue2025','Revenue 2025','money',100],['visible2026','Visible 2026','money',100],['forecast2026','Forecast 2026','money',100],['deltaVs2025','Delta vs 2025','money',100],['exposedRevenue','Unsecured Gap Proxy · legacy','money',105],['riskAccounts','Risk Accounts','integer',80]]}
   function summaryData(mode){var accs=scopeAccounts(mode),cust=customerRows(mode),acts=actionRows(false),active=acts.filter(function(a){return a.salesforceStatus!=='Completed'&&a.status!=='CANCELLED'}),tm=targetMap(accs),sum=function(k){return cust.reduce(function(s,r){return s+num(r[k])},0)},statusCounts={};cust.forEach(function(r){statusCounts[r.status]=(statusCounts[r.status]||0)+1});var activeTarget=0,target=0,stretch=0;tm.forEach(function(r){activeTarget+=num(r.activeTarget);target+=num(r.target);stretch+=num(r.stretch)});var overdue=active.filter(function(a){return a.dueDate&&a.dueDate<new Date().toISOString().slice(0,10)}).length;return[
-    {section:'Metadata',metric:'Build',value:'SAWARO26 '+V,unit:'',context:'Export Hub'},
+    {section:'Metadata',metric:'Build',value:'SAWARO26 '+releaseVersion(),unit:'',context:'Export Hub module '+V},
     {section:'Metadata',metric:'Generated At',value:isoNow(),unit:'',context:scopeLabel(mode)},
     {section:'Portfolio',metric:'Accounts',value:accs.length,unit:'count',context:''},
     {section:'Portfolio',metric:'Articles',value:articleRows(mode).length,unit:'count',context:''},
@@ -14156,7 +14446,7 @@ var GGB_BATCH1=[{"k":"200003.0","n":"AICHELIN GES.M.B.H.","c":"AT","ct":"MÖDLIN
   function sheetName(n){return safeText(n).replace(/[\\\/\?\*\[\]:]/g,' ').slice(0,31)||'Sheet'}
   function cellXML(v,type){var style='Text',dt='String',val=v;if(type==='money'){style='Money';dt='Number';if(v===''||v==null)return '<Cell ss:StyleID="Money"/>';val=num(v)}else if(type==='integer'){style='Integer';dt='Number';if(v===''||v==null)return '<Cell ss:StyleID="Integer"/>';val=num(v)}else if(type==='decimal'){style='Decimal';dt='Number';if(v===''||v==null)return '<Cell ss:StyleID="Decimal"/>';val=num(v)}else if(type==='percent'){style='Percent';dt='Number';if(v===''||v==null)return '<Cell ss:StyleID="Percent"/>';val=num(v)}else if(type==='boolean'){style='Center';dt='String';val=v?'Yes':'No'}else if(type==='date'){style='Text';dt='String'}else if(type==='auto'&&typeof v==='number'){style='Decimal';dt='Number';val=v}return '<Cell ss:StyleID="'+style+'"><Data ss:Type="'+dt+'">'+xml(val)+'</Data></Cell>'}
   function worksheetXML(name,rows,cols){var colXML=cols.map(function(c){return '<Column ss:AutoFitWidth="0" ss:Width="'+(c[3]||90)+'"/>'}).join('');var head='<Row ss:StyleID="Header">'+cols.map(function(c){return '<Cell><Data ss:Type="String">'+xml(c[1])+'</Data></Cell>'}).join('')+'</Row>';var body=rows.map(function(r){return '<Row>'+cols.map(function(c){return cellXML(r[c[0]],c[2])}).join('')+'</Row>'}).join('');return '<Worksheet ss:Name="'+xml(sheetName(name))+'"><Table>'+colXML+head+body+'</Table><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane><ActivePane>2</ActivePane><ProtectObjects>False</ProtectObjects><ProtectScenarios>False</ProtectScenarios></WorksheetOptions></Worksheet>'}
-  function workbookXML(sheets){return '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40"><DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Author>Manfred Foissner</Author><Created>'+xml(isoNow())+'</Created><Company>SAWARO26</Company><Version>'+V+'</Version></DocumentProperties><ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel"><WindowHeight>12345</WindowHeight><WindowWidth>22200</WindowWidth><ProtectStructure>False</ProtectStructure><ProtectWindows>False</ProtectWindows></ExcelWorkbook><Styles><Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Bottom"/><Borders/><Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="10"/><Interior/><NumberFormat/><Protection/></Style><Style ss:ID="Header"><Alignment ss:Vertical="Center" ss:WrapText="1"/><Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#1D2B3A" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#82E84F"/></Borders></Style><Style ss:ID="Text"><Alignment ss:Vertical="Top" ss:WrapText="1"/><NumberFormat ss:Format="@"/></Style><Style ss:ID="Money"><Alignment ss:Horizontal="Right"/><NumberFormat ss:Format="#,##0.00 [$€-407]"/></Style><Style ss:ID="Integer"><Alignment ss:Horizontal="Right"/><NumberFormat ss:Format="#,##0"/></Style><Style ss:ID="Decimal"><Alignment ss:Horizontal="Right"/><NumberFormat ss:Format="#,##0.00"/></Style><Style ss:ID="Percent"><Alignment ss:Horizontal="Right"/><NumberFormat ss:Format="0.0%"/></Style><Style ss:ID="Center"><Alignment ss:Horizontal="Center"/></Style></Styles>'+sheets.map(function(s){return worksheetXML(s.name,s.rows,s.cols)}).join('')+'</Workbook>'}
+  function workbookXML(sheets){return '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40"><DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Author>Manfred Foissner</Author><Created>'+xml(isoNow())+'</Created><Company>SAWARO26</Company><Version>'+releaseVersion()+'</Version></DocumentProperties><ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel"><WindowHeight>12345</WindowHeight><WindowWidth>22200</WindowWidth><ProtectStructure>False</ProtectStructure><ProtectWindows>False</ProtectWindows></ExcelWorkbook><Styles><Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Bottom"/><Borders/><Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="10"/><Interior/><NumberFormat/><Protection/></Style><Style ss:ID="Header"><Alignment ss:Vertical="Center" ss:WrapText="1"/><Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#1D2B3A" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#82E84F"/></Borders></Style><Style ss:ID="Text"><Alignment ss:Vertical="Top" ss:WrapText="1"/><NumberFormat ss:Format="@"/></Style><Style ss:ID="Money"><Alignment ss:Horizontal="Right"/><NumberFormat ss:Format="#,##0.00 [$€-407]"/></Style><Style ss:ID="Integer"><Alignment ss:Horizontal="Right"/><NumberFormat ss:Format="#,##0"/></Style><Style ss:ID="Decimal"><Alignment ss:Horizontal="Right"/><NumberFormat ss:Format="#,##0.00"/></Style><Style ss:ID="Percent"><Alignment ss:Horizontal="Right"/><NumberFormat ss:Format="0.0%"/></Style><Style ss:ID="Center"><Alignment ss:Horizontal="Center"/></Style></Styles>'+sheets.map(function(s){return worksheetXML(s.name,s.rows,s.cols)}).join('')+'</Workbook>'}
   function exportCustomersCSV(){/* SAWARO_RECOVERY_MARKER ID:R3_EXPORT_CUSTOMERS FUTURE_MODULE:exports/customer-export */SAWARO26_REPORT_GUARD.assertReady('Customer Forecast Export',scopeAccounts());var rows=customerRows();downloadBlob('SAWARO26_CUSTOMERS_'+dateStamp()+'.csv',buildCSV(rows,colsCustomer()),'text/csv;charset=utf-8');notify(rows.length+' Kunden als CSV exportiert','ok')}
   function exportCustomersXLS(){SAWARO26_REPORT_GUARD.assertReady('Customer Forecast Export',scopeAccounts());var rows=customerRows();downloadBlob('SAWARO26_CUSTOMERS_'+dateStamp()+'.xls',workbookXML([{name:'Customers',rows:rows,cols:colsCustomer()}]),'application/vnd.ms-excel;charset=utf-8');notify(rows.length+' Kunden als XLS exportiert','ok')}
   function exportArticlesCSV(){var rows=articleRows();downloadBlob('SAWARO26_ARTICLES_'+dateStamp()+'.csv',buildCSV(rows,colsArticle()),'text/csv;charset=utf-8');notify(rows.length+' Artikel als CSV exportiert','ok')}
@@ -14203,6 +14493,14 @@ var GGB_BATCH1=[{"k":"200003.0","n":"AICHELIN GES.M.B.H.","c":"AT","ct":"MÖDLIN
 })();
 </script>
 
+
+<!--
+SAWARO26 v180.8.1 · R8.2.8.1 SOS BOOTSTRAP ORDER HOTFIX · CANDIDATE
+Baseline: v180.7 · SHA-256 c068febc3689d2024cb3b318038a12ad4e6e6cffd4fad32e981f0d925f6d67d9
+Contract: due_date = factual/business deadline; planned_execution_date = capacity-planned execution day.
+CAP4 mutates planned_execution_date only. Calendar/Agenda use planned execution; overdue/Salesforce/ICS keep business due_date.
+Protected: Truth, Forecast, R7A, R7B, RADAR scoring/materiality, priority renderer, reports, Salesforce field mapping, single SOS master.
+-->
 
 <!--
 SAWARO26 v166 CAP4 RISK ALERT FIX · PATCH CANDIDATE
